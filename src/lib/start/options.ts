@@ -18,15 +18,52 @@ export const OFFER = {
   },
 } as const
 
-export const BUILD_OPTIONS = [
-  'New website',
-  'Website redesign',
-  'Landing page',
-  'Online booking',
-  'Online shop',
-  'Web app or system',
-  'Something else',
+/**
+ * What can be built, as headers that each open to a short list. Only one
+ * header is open at a time so the page never gets long. A chosen item is
+ * stored as "Header: item" (or just the header for "Something else").
+ */
+export const BUILD_GROUPS = [
+  {
+    id: 'website',
+    title: 'New website',
+    blurb: 'A full site for your business.',
+    items: ['Business or services site', 'Portfolio or gallery', 'Blog or news site', 'Rebuild my existing site', 'Not sure yet'],
+  },
+  {
+    id: 'landing',
+    title: 'Landing page',
+    blurb: 'One focused page.',
+    items: ['One page for a service or offer', 'Launch or campaign page', 'Coming soon or waiting list', 'Not sure yet'],
+  },
+  {
+    id: 'booking',
+    title: 'Online booking',
+    blurb: 'Let customers book themselves in.',
+    items: ['Appointments', 'Classes or timetable', 'Several staff or calendars', 'Not sure yet'],
+  },
+  {
+    id: 'shop',
+    title: 'Online shop',
+    blurb: 'Sell products online.',
+    items: ['Shopify store', 'Shopify store plus a custom website', 'Custom-built shop', 'Not sure, advise me'],
+  },
+  {
+    id: 'system',
+    title: 'Web app or work system',
+    blurb: 'Software for you or your customers.',
+    items: ['Customer accounts or portal', 'Internal tool or dashboard', 'Quotes, jobs or invoices', 'Automating a manual process', 'Not sure yet'],
+  },
+  {
+    id: 'other',
+    title: 'Something else',
+    blurb: 'Describe it on the next screen.',
+    items: [],
+  },
 ] as const
+
+export const buildValue = (g: (typeof BUILD_GROUPS)[number], item?: string) => (item ? `${g.title}: ${item}` : g.title)
+export const BUILD_VALUES: readonly string[] = BUILD_GROUPS.flatMap((g) => (g.items.length ? g.items.map((i) => buildValue(g, i)) : [buildValue(g)]))
 
 export const REPLY_OPTIONS = [
   { id: 'whatsapp', label: 'WhatsApp', note: 'Quickest. I reply in the same chat.' },
@@ -124,7 +161,7 @@ const isUrlish = (s: string) => !s.trim() || /^(https?:\/\/)?[^\s.]+\.[^\s]{2,}|
 export function validateStep(step: StepId, f: StartForm, today: string): Record<string, string> {
   const e: Record<string, string> = {}
   if (step === 'build') {
-    if (!f.build.some((b) => (BUILD_OPTIONS as readonly string[]).includes(b))) e.build = 'Pick at least one, even if it is "Something else".'
+    if (!f.build.some((b) => BUILD_VALUES.includes(b))) e.build = 'Open a heading and pick at least one option, even if it is "Something else".'
   }
   if (step === 'details') {
     if (f.details.trim().length < 20) e.details = 'Tell me a bit more: what the business does and what the site needs to do.'

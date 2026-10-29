@@ -5,7 +5,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { CONTACT_EMAIL } from '@/lib/booking/options'
 import { whatsappHref } from '@/lib/contact'
 import {
-  BUILD_OPTIONS,
+  BUILD_GROUPS,
+  buildValue,
   LAST_BOOKABLE_DAYS,
   MAX_PHOTOS,
   OFFER,
@@ -111,6 +112,7 @@ export function StartFlow() {
   const [canShare, setCanShare] = useState(false)
   const [today, setToday] = useState('')
   const [month, setMonth] = useState(0)
+  const [openGroup, setOpenGroup] = useState('')
   const [summaryOpen, setSummaryOpen] = useState(false)
 
   const heading = useRef<HTMLHeadingElement>(null)
@@ -477,20 +479,58 @@ export function StartFlow() {
                   <h1 className="display" tabIndex={-1} ref={heading}>
                     What should I build?
                   </h1>
-                  <p className="sub">Pick everything that applies. I build websites and systems of any size.</p>
+                  <p className="sub">Tap a heading to open it, then pick what fits. Choose as many as you like. I build websites and systems of any size.</p>
                   <div className="body">
-                    <div className="pills" id="sf-build" tabIndex={-1} role="group" aria-label="What to build">
-                      {BUILD_OPTIONS.map((b) => (
-                        <button
-                          key={b}
-                          type="button"
-                          className="pill"
-                          aria-pressed={f.build.includes(b)}
-                          onClick={() => set('build', f.build.includes(b) ? f.build.filter((x) => x !== b) : [...f.build, b])}
-                        >
-                          {b}
-                        </button>
-                      ))}
+                    <div className="sf-acc" id="sf-build" tabIndex={-1}>
+                      {BUILD_GROUPS.map((g) => {
+                        const open = openGroup === g.id
+                        const chosen = f.build.filter((v) => v === g.title || v.startsWith(`${g.title}: `))
+                        const toggle = (v: string) => set('build', f.build.includes(v) ? f.build.filter((x) => x !== v) : [...f.build, v])
+                        const direct = g.items.length === 0
+                        return (
+                          <div key={g.id} className={`sf-acc-item${open ? ' open' : ''}${chosen.length ? ' has' : ''}`}>
+                            <h2>
+                              <button
+                                type="button"
+                                id={`sf-acc-b-${g.id}`}
+                                className="sf-acc-head"
+                                aria-expanded={direct ? undefined : open}
+                                aria-controls={direct ? undefined : `sf-acc-p-${g.id}`}
+                                aria-pressed={direct ? chosen.length > 0 : undefined}
+                                onClick={() => {
+                                  if (direct) {
+                                    setOpenGroup('')
+                                    toggle(buildValue(g))
+                                  } else setOpenGroup(open ? '' : g.id)
+                                }}
+                              >
+                                <span className="sf-acc-t">
+                                  <b>{g.title}</b>
+                                  <small>{g.blurb}</small>
+                                </span>
+                                {chosen.length > 0 && !direct && <em className="sf-acc-n">{chosen.length}</em>}
+                                <i aria-hidden="true" className={direct ? 'tick' : 'chev'}>
+                                  {direct ? (chosen.length ? '✓' : '+') : ''}
+                                </i>
+                              </button>
+                            </h2>
+                            {!direct && (
+                              <div id={`sf-acc-p-${g.id}`} role="region" aria-labelledby={`sf-acc-b-${g.id}`} className="sf-acc-panel" hidden={!open}>
+                                <div className="sf-acc-in">
+                                  {g.items.map((item) => {
+                                    const v = buildValue(g, item)
+                                    return (
+                                      <button key={item} type="button" className="pill" aria-pressed={f.build.includes(v)} onClick={() => toggle(v)}>
+                                        {item}
+                                      </button>
+                                    )
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
                     </div>
                     {err('build')}
                   </div>
