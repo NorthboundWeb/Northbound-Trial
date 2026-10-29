@@ -953,3 +953,14 @@ body { overscroll-behavior-y: none; }
 .sf-emailalt { margin-top: 24px; display: flex; flex-direction: column; gap: 10px; max-width: 520px; }
 .sf-emailalt-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .sf-emailalt-row input { flex: 1 1 220px; min-width: 0; }
+
+/* Menu overlay: white pills keep fixed dark text in both themes; search centred */
+.nav.is-open .pillbar, html[data-theme="dark"] .nav.is-open .pillbar { background: #fff; color: #0c1220; }
+.nav.is-open .pillbar-btn, html[data-theme="dark"] .nav.is-open .pillbar-btn { color: #0c1220; }
+.nav.is-open .pillbar-chip, html[data-theme="dark"] .nav.is-open .pillbar-chip { background: #eef1f6; color: #0c1220; }
+.nav.is-open .theme-btn { color: #0c1220; }
+.nav.is-open .nav-cta, html[data-theme="dark"] .nav.is-open .nav-cta { background: #fff; border-color: #fff; color: #0c1220; }
+.menu-message, html[data-theme="dark"] .menu-message { background: #fff; color: #0c1220; }
+.menu-inner { align-items: center; }
+.menu-search { margin-inline: auto; justify-content: center; }
+.menu-search input { text-align: center; }
