@@ -794,12 +794,12 @@ html[data-theme="dark"] { --ok: #3ddc97; --ok-wash: rgba(61, 220, 151, .14); }
 
 /* build-type accordion: one header open at a time */
 .sf-acc { display: flex; flex-direction: column; gap: 8px; outline: none; }
-.sf-acc-item { border: 1px solid var(--line2); border-radius: 18px; background: var(--bg); transition: border-color .2s, box-shadow .2s; }
+.sf-acc-item { border: 1px solid var(--line2); border-radius: 18px; background: var(--bg); background-clip: padding-box; overflow: hidden; isolation: isolate; transition: border-color .2s, box-shadow .2s; }
 .sf-acc-item h2 { margin: 0; font: inherit; }
 .sf-acc-item:hover { border-color: var(--ink); }
 .sf-acc-item.has { border-color: var(--accent); }
 .sf-acc-item.open { border-color: var(--ink); box-shadow: 0 14px 30px -22px rgba(12, 18, 32, .45); }
-.sf-acc-head { width: 100%; display: flex; align-items: center; gap: 12px; text-align: left; border: 0; background: none; padding: 16px 18px; min-height: 64px; color: var(--ink); border-radius: 18px; }
+.sf-acc-head { width: 100%; display: flex; align-items: center; gap: 12px; text-align: left; border: 0; background: none; padding: 16px 18px; min-height: 64px; color: var(--ink); border-radius: 0; outline-offset: -3px; }
 .sf-acc-t { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .sf-acc-t b { font-family: var(--display); font-weight: 600; font-size: 19px; letter-spacing: -.02em; }
 .sf-acc-t small { font-size: 13px; color: var(--muted); }
@@ -816,3 +816,8 @@ html[data-theme="dark"] { --ok: #3ddc97; --ok-wash: rgba(61, 220, 151, .14); }
 .sf-resume b { font-family: var(--display); font-weight: 600; font-size: 17px; }
 .sf-resume span { font-size: 13px; color: var(--muted); }
 .sf-resume-btns { display: flex; gap: 8px; }
+
+/* clean corners: boxes with borders clip their contents and keep the border on the padding edge */
+.sf-offer-card, .sf-time, .sf-cal, .sf-review-row, .card, .pill, .sf-resume, .sf-drop { background-clip: padding-box; }
+.sf-offer-card, .sf-time, .sf-review-row { overflow: hidden; }
+.sf-acc-head:focus-visible { outline: 2px solid var(--accent); }
