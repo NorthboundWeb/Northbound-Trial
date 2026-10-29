@@ -172,7 +172,7 @@ export const managementPlans: ManagementPlan[] = [
   {
     slug: 'ultimate-management',
     name: 'Ultimate Management',
-    price: 39,
+    price: 59,
     summary:
       'Twice the update time, a regular look at how the site is performing, and your requests go up the queue.',
     includes: [
@@ -190,7 +190,7 @@ export const managementPlans: ManagementPlan[] = [
   {
     slug: 'custom-management',
     name: 'Custom Management',
-    price: 39,
+    price: 59,
     summary:
       'For custom builds and web applications, where what needs looking after is agreed alongside the build.',
     includes: [

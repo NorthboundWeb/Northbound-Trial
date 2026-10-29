@@ -72,8 +72,8 @@ site; keep the two in step. Swiping right on a touch screen goes back a page (`s
 
 ## Copy rules (same as the live site)
 
-Prices are real: Pro £249, Ultimate £349, management from £39 a month with the
-first month free and optional. No unlimited or guaranteed promises, no invented
+Prices are real: Pro £249, Ultimate £349, management Pro £39, Ultimate £59 and
+Custom from £59 a month, first month free and optional. No unlimited or guaranteed promises, no invented
 social proof. The free build is for a client's **first** website only (no deposit, buy it
 only if you like it, no further contact if not); every later website or system
 starts with the 50% deposit. That is Che's own wording; keep it as written.
