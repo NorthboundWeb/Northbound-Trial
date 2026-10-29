@@ -112,7 +112,6 @@ export function StartFlow() {
   const [shareMsg, setShareMsg] = useState('')
   const [canShare, setCanShare] = useState(false)
   const [today, setToday] = useState('')
-  const [month, setMonth] = useState(0)
   const [openGroup, setOpenGroup] = useState('')
   const [summaryOpen, setSummaryOpen] = useState(false)
   const [draft, setDraft] = useState<Draft | null>(null)
@@ -769,51 +768,46 @@ export function StartFlow() {
                       <li className="k-open">Free to pick</li>
                     </ul>
                     {months.length > 0 && (
-                      <div className="sf-cal" id="sf-date" tabIndex={-1}>
-                        <div className="sf-cal-head">
-                          <button type="button" className="sf-cal-nav" onClick={() => setMonth((m) => Math.max(0, m - 1))} disabled={month === 0} aria-label="Previous month">
-                            ←
-                          </button>
-                          <b aria-live="polite">{months[month].label}</b>
-                          <button
-                            type="button"
-                            className="sf-cal-nav"
-                            onClick={() => setMonth((m) => Math.min(months.length - 1, m + 1))}
-                            disabled={month === months.length - 1}
-                            aria-label="Next month"
-                          >
-                            →
-                          </button>
-                        </div>
-                        <div className="sf-cal-grid" role="grid" aria-label={months[month].label}>
+                      <div className="sf-cal" id="sf-date" tabIndex={0} role="group" aria-label="Delivery date calendar. Scroll to see later months.">
+                        <div className="sf-dows" aria-hidden="true">
                           {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
-                            <span key={d} className="sf-dow" role="columnheader">
+                            <span key={d} className="sf-dow">
                               {d}
                             </span>
                           ))}
-                          {months[month].cells.map((iso, i) => {
-                            if (!iso) return <span key={`b${i}`} aria-hidden="true" />
-                            const k = dayKind(today, iso)
-                            const far = dayDiff(today, iso) > LAST_BOOKABLE_DAYS
-                            const pickable = (k === 'maybe' || k === 'open') && !far
-                            const day = Number(iso.slice(8))
-                            return (
-                              <button
-                                key={iso}
-                                type="button"
-                                className={`sf-day k-${k}${f.date === iso ? ' sel' : ''}`}
-                                disabled={!pickable}
-                                aria-pressed={pickable ? f.date === iso : undefined}
-                                aria-label={`${fmtDay(iso, { weekday: 'long', day: 'numeric', month: 'long' })}${KIND_LABEL[k] ? `, ${KIND_LABEL[k]}` : ''}`}
-                                onClick={() => set('date', iso)}
-                              >
-                                <span>{day}</span>
-                                {KIND_LABEL[k] && <small>{KIND_LABEL[k]}</small>}
-                              </button>
-                            )
-                          })}
                         </div>
+                        {months.map((m) => (
+                          <section key={m.key} className="sf-month" aria-label={m.label}>
+                            <h3 className="sf-month-h">{m.label}</h3>
+                            <div className="sf-cal-grid">
+                              {m.cells.map((iso, i) => {
+                                if (!iso) return <span key={`b${i}`} aria-hidden="true" />
+                                const k = dayKind(today, iso)
+                                const far = dayDiff(today, iso) > LAST_BOOKABLE_DAYS
+                                const pickable = (k === 'maybe' || k === 'open') && !far
+                                const day = Number(iso.slice(8))
+                                return (
+                                  <button
+                                    key={iso}
+                                    type="button"
+                                    className={`sf-day k-${k}${f.date === iso ? ' sel' : ''}`}
+                                    disabled={!pickable}
+                                    aria-pressed={pickable ? f.date === iso : undefined}
+                                    aria-label={`${fmtDay(iso, { weekday: 'long', day: 'numeric', month: 'long' })}${KIND_LABEL[k] ? `, ${KIND_LABEL[k]}` : ''}`}
+                                    onClick={() => set('date', iso)}
+                                  >
+                                    <span>{day}</span>
+                                    {KIND_LABEL[k] && <small>{KIND_LABEL[k]}</small>}
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          </section>
+                        ))}
                       </div>
+                      <p className="note sf-cal-hint" aria-hidden="true">
+                        Scroll for later months ↓
+                      </p>
                     )}
                     {err('date')}
                     <p className="note" aria-live="polite" style={{ marginTop: 14 }}>
