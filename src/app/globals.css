@@ -439,3 +439,7 @@ html:not([data-nb-intro="seen"]) body { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .collage-card, .tags li, .menu, .menu li, .process-panel { animation: none; }
 }
+
+/* swipe right to go back (touch screens) */
+.swipe-back { position: fixed; left: 0; top: 50%; z-index: 99990; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: #fff; color: var(--ink); box-shadow: 0 8px 24px -8px rgba(12,18,32,.45); pointer-events: none; transition: background-color .15s, color .15s; }
+.swipe-back.ready { background: var(--accent); color: #fff; }

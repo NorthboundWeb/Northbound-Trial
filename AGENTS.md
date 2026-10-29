@@ -25,7 +25,7 @@ session.
 `src/lib/discover.ts`; always labelled as concepts), `/about`, `/tools` (the
 site self-check, runs in the browser only), `/booking`, `/diary`. Package
 copy, prices and terms come from `src/lib/services.ts`, copied from the live
-site; keep the two in step. Clicking the logo plays the curtain
+site; keep the two in step. Swiping right on a touch screen goes back a page (`src/components/swipe-back.tsx`); booking steps are history entries (`?step=N`) so back, edge-swipe and the swipe step back one question. Clicking the logo plays the curtain
 (`src/components/curtain.tsx`) and goes home.
 
 ## How it fits together

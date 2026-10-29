@@ -15,7 +15,9 @@ import {
   type BookingForm,
   type MyBooking,
 } from '@/lib/booking/options'
+import { goWithCurtain } from './curtain'
 import { DayGrid, SlotGrid, StatusPill } from './day-slot'
+import { SWIPE_BACK_EVENT } from './swipe-back'
 import { HelpIcon } from './icons'
 import { TopBar } from './top-bar'
 
@@ -43,7 +45,51 @@ export function BookingFlow({ days, initialTaken, initialMine }: Props) {
 
   useEffect(() => {
     startedAt.current = Date.now()
+    // A reload mid-flow has lost the answers, so start again at step 1 with a clean URL.
+    if (window.location.search.includes('step=')) window.history.replaceState(null, '', window.location.pathname)
   }, [])
+
+  // Each step is a history entry (?step=2 and so on), so the back button, the
+  // phone's own edge swipe and our swipe gesture all go back one question.
+  const doneRef = useRef(done)
+  const reached = useRef(0)
+  useEffect(() => {
+    doneRef.current = done
+  }, [done])
+  useEffect(() => {
+    const onPop = () => {
+      if (doneRef.current) {
+        // Already booked: going back leaves the flow rather than reopening old answers.
+        goWithCurtain('/')
+        return
+      }
+      const n = Number(new URLSearchParams(window.location.search).get('step') ?? '1') - 1
+      const target = Number.isFinite(n) ? Math.min(Math.max(n, 0), reached.current) : 0
+      setErrs({})
+      setFormMsg('')
+      setStep(target)
+    }
+    const onSwipe = (e: Event) => {
+      if (doneRef.current) return
+      const at = Number(new URLSearchParams(window.location.search).get('step') ?? '1') - 1
+      if (at > 0) {
+        e.preventDefault()
+        window.history.back()
+      }
+    }
+    window.addEventListener('popstate', onPop)
+    window.addEventListener(SWIPE_BACK_EVENT, onSwipe)
+    return () => {
+      window.removeEventListener('popstate', onPop)
+      window.removeEventListener(SWIPE_BACK_EVENT, onSwipe)
+    }
+  }, [])
+
+  function goTo(n: number) {
+    reached.current = Math.max(reached.current, n)
+    window.history.pushState(null, '', n === 0 ? window.location.pathname : `?step=${n + 1}`)
+    setStep(n)
+  }
 
   // Keep availability and the visitor's statuses fresh while the page is open.
   useEffect(() => {
@@ -93,14 +139,16 @@ export function BookingFlow({ days, initialTaken, initialMine }: Props) {
       return
     }
     setErrs({})
-    if (step < total - 1) return setStep(step + 1)
+    if (step < total - 1) return goTo(step + 1)
     submit()
   }
 
   function back() {
     setErrs({})
     setFormMsg('')
-    setStep(Math.max(0, step - 1))
+    // The step we came from is the previous history entry; popstate sets the step.
+    if (new URLSearchParams(window.location.search).get('step')) window.history.back()
+    else setStep(Math.max(0, step - 1))
   }
 
   function submit() {
@@ -113,7 +161,10 @@ export function BookingFlow({ days, initialTaken, initialMine }: Props) {
         setFormMsg('')
         return
       }
-      if (typeof res.step === 'number') setStep(res.step)
+      if (typeof res.step === 'number' && res.step !== step) {
+        window.history.replaceState(null, '', res.step === 0 ? window.location.pathname : `?step=${res.step + 1}`)
+        setStep(res.step)
+      }
       setErrs(res.errors ?? {})
       setFormMsg(res.message ?? '')
     })
@@ -124,6 +175,8 @@ export function BookingFlow({ days, initialTaken, initialMine }: Props) {
     setF(emptyForm())
     setErrs({})
     setStep(0)
+    reached.current = 0
+    window.history.replaceState(null, '', window.location.pathname)
     startedAt.current = Date.now()
   }
 

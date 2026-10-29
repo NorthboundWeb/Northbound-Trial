@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter, Inter_Tight, JetBrains_Mono } from 'next/font/google'
 import { Curtain } from '@/components/curtain'
 import { Intro, introSeenScript } from '@/components/intro'
+import { SwipeBack } from '@/components/swipe-back'
 import './globals.css'
 
 const sans = Inter({ subsets: ['latin'], variable: '--nb-sans', display: 'swap' })
@@ -22,6 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: introSeenScript }} />
         <Intro />
         <Curtain />
+        <SwipeBack />
         <a className="skip" href="#main">
           Skip to content
         </a>
