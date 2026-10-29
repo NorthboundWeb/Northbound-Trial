@@ -1,13 +1,11 @@
 import Link from 'next/link'
 import { Faq, Process } from '@/components/faq'
-import { DemoSite } from '@/components/demo-site'
-import { MockSite } from '@/components/mock-site'
+import { ContactSplit } from '@/components/contact-split'
+import { LoopToTop } from '@/components/loop-to-top'
 import { PageShell } from '@/components/page-shell'
 import { ServiceTicker } from '@/components/service-ticker'
 import { SiteWall } from '@/components/site-wall'
-import { comparisons } from '@/lib/discover'
-import { demos } from '@/lib/showcase'
-import { ADVANCED_MANAGEMENT_PRICE, buildPackages, process } from '@/lib/services'
+import { ADVANCED_MANAGEMENT_PRICE, commercialTerms, managementTerms, process } from '@/lib/services'
 
 /** The clickable list beside the wall: each one opens the page that covers it. */
 const TAGS = [
@@ -82,7 +80,7 @@ const FAQS = [
 
 export default function Home() {
   return (
-    <PageShell>
+    <PageShell after={<LoopToTop />}>
       <section className="hero wrap">
         <SiteWall />
         <ServiceTicker items={TAGS} />
@@ -92,37 +90,15 @@ export default function Home() {
             Websites that get you found.
             <span>Priced before we start.</span>
           </h1>
-          <a className="scroll-cue" href="#services">
+          <a className="scroll-cue" href="#contact">
             Scroll down
           </a>
         </div>
       </section>
 
-      <section className="band wrap" aria-labelledby="demos-h">
-        <p className="eyebrow">The sites on the wall are real pages. Open any of them.</p>
-        <h2 id="demos-h" className="section-h">
-          Twelve sites.
-          <span>Built to show what is possible.</span>
-        </h2>
-        <p className="section-sub">Every business here is made up. The bookings, price lists, shops and calculators are the kind of thing your site can have.</p>
-        <div className="demo-grid">
-          {demos.map((d) => (
-            <Link key={d.slug} href={`/demos/${d.slug}`} className="demo-tile">
-              <span className="demo-tile-shot" aria-hidden="true">
-                <span className="demo-tile-scale">
-                  <DemoSite d={d} />
-                </span>
-              </span>
-              <span className="work-meta">
-                <b>{d.name}</b>
-                <span>{d.trade}</span>
-              </span>
-            </Link>
-          ))}
-        </div>
-      </section>
+      <ContactSplit />
 
-      <section id="services" className="band wrap">
+      <section id="about" className="band wrap">
         <p className="eyebrow">Design, build, bookings and care. One person, start to finish.</p>
         <h2 className="section-h">
           What I build.
@@ -141,31 +117,6 @@ export default function Home() {
                 Explore in detail <span aria-hidden="true">→</span>
               </Link>
             </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="band work-band">
-        <div className="wrap">
-          <h2 className="section-h">
-            Concepts you can check.
-            <span>Before you spend a penny.</span>
-          </h2>
-          <p className="section-sub">Four before-and-after rebuilds. Every business shown is made up; the changes and the measurements are real properties of the mock-ups.</p>
-        </div>
-        <div className="work-row" role="list">
-          {comparisons.map((c) => (
-            <Link key={c.slug} href={`/work/${c.slug}`} className="work-card" role="listitem">
-              <MockSite m={c.after} compact />
-              <span className="work-meta">
-                <b>{c.business}</b>
-                <span>{c.trade}</span>
-              </span>
-              <span className="work-tags">
-                <i>Concept</i>
-                <i>Redesign</i>
-              </span>
-            </Link>
           ))}
         </div>
       </section>
@@ -190,20 +141,34 @@ export default function Home() {
         <Faq items={FAQS} />
       </section>
 
-      <section className="band wrap">
-        <div className="cta-panel">
-          <p className="label" style={{ color: 'rgba(255,255,255,.7)' }}>
-            Free · No calls · Written quote
-          </p>
-          <h2>Tell me what the site needs to do.</h2>
-          <p>
-            Five quick questions, then I reply by WhatsApp or email. If a smaller package would do the job, that is the one I will point you at. Pro is {`£${buildPackages[0].price}`}.
-          </p>
-          <Link className="btn light grow-sm" href="/start">
-            Start a project
-          </Link>
+      <section id="terms" className="band wrap terms-band" aria-labelledby="terms-h">
+        <p className="eyebrow">The small print, in plain English</p>
+        <h2 id="terms-h" className="section-h">
+          Terms.
+          <span>Written down before we start.</span>
+        </h2>
+        <div className="terms-grid">
+          {commercialTerms.map((t) => (
+            <div key={t.title}>
+              <h3>{t.title}</h3>
+              <ul>
+                {t.points.map((x) => (
+                  <li key={x}>{x}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+          <div>
+            <h3>Management plans</h3>
+            <ul>
+              {managementTerms.map((x) => (
+                <li key={x}>{x}</li>
+              ))}
+            </ul>
+          </div>
         </div>
       </section>
+
     </PageShell>
   )
 }
