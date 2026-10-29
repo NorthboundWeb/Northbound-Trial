@@ -301,7 +301,7 @@ html:not([data-nb-intro="seen"]) body { overflow: hidden; }
 .process { margin-top: 32px; }
 .process-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
 .process-tabs button { flex: none; border: 1px solid var(--line2); background: var(--bg); border-radius: 999px; padding: 10px 18px; min-height: 44px; font-size: 14px; color: var(--muted); }
-.process-tabs button[aria-selected="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+.process-tabs button[aria-selected="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); }
 .process-bar { height: 2px; background: var(--line); margin-top: 18px; }
 .process-bar span { display: block; height: 100%; background: var(--accent); transition: width .5s var(--ease); }
 .process-panel { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 28px; padding-top: 32px; animation: nb-step .45s var(--ease) both; }
