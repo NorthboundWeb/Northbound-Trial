@@ -41,8 +41,8 @@ export function SwipeBack() {
   const decided = useRef<'h' | 'v' | null>(null)
 
   useEffect(() => {
-    if (!window.matchMedia('(pointer: coarse)').matches) return
-
+    // Touch events only come from touch input, so a mouse or trackpad never
+    // triggers this; no device check needed (and none to go stale).
     const onStart = (e: TouchEvent) => {
       if (e.touches.length !== 1) return
       const t = e.touches[0]
