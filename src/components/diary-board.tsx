@@ -52,10 +52,7 @@ export function DiaryBoard({ days, initial }: { days: string[]; initial: DiaryDa
 
   return (
     <>
-      <p className="label kick">Diary</p>
-      <h1 className="display" style={{ fontSize: 'clamp(2.2rem, 5vw, 3.6rem)', marginTop: 18 }}>
-        Call requests<span className="kick">.</span>
-      </h1>
+      <h1 className="display">Call requests</h1>
       <p className="sub">
         {open.length} active, {rows.length - open.length} cancelled. Confirming here updates the visitor&apos;s page. Email them to confirm the
         time too: this preview does not send email.

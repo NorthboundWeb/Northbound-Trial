@@ -9,6 +9,15 @@ This version of Next.js may differ from your training data. Read the relevant
 guide in `node_modules/next/dist/docs/` before writing code, and heed
 deprecation notices.
 
+## Look
+
+Laid out like Averlo's booking page (plain white page, mark top left, step
+counter top right, hairline progress bar, one narrow column, Continue pinned to
+the bottom) but with Northbound's own mark, intro, copy and blue. Do not copy
+Averlo's logo, wording, icons or colours. The intro curtain
+(`src/components/intro.tsx`, art in `public/brand/`) plays once per browser
+session.
+
 ## How it fits together
 
 - `/` — the five-step flow (`src/components/booking-flow.tsx`): needs, working

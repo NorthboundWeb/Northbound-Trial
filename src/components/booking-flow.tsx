@@ -7,7 +7,6 @@ import {
   BUDGETS,
   CONTACT_EMAIL,
   HELP_OPTIONS,
-  ON_THE_CALL,
   PLAN_OPTIONS,
   STEPS,
   TIMELINES,
@@ -17,6 +16,8 @@ import {
   type MyBooking,
 } from '@/lib/booking/options'
 import { DayGrid, SlotGrid, StatusPill } from './day-slot'
+import { HelpIcon } from './icons'
+import { TopBar } from './top-bar'
 
 const POLL_MS = 20_000
 
@@ -38,6 +39,7 @@ export function BookingFlow({ days, initialTaken, initialMine }: Props) {
   const firstRender = useRef(true)
 
   const takenSet = useMemo(() => new Set(taken), [taken])
+  const total = STEPS.length
 
   useEffect(() => {
     startedAt.current = Date.now()
@@ -74,11 +76,10 @@ export function BookingFlow({ days, initialTaken, initialMine }: Props) {
     })
   }
 
-  const toggleHelp = (h: string) =>
-    set('help', f.help.includes(h) ? f.help.filter((x) => x !== h) : [...f.help, h])
+  const toggleHelp = (h: string) => set('help', f.help.includes(h) ? f.help.filter((x) => x !== h) : [...f.help, h])
 
-  function next(e: React.FormEvent) {
-    e.preventDefault()
+  function next(e?: React.FormEvent) {
+    e?.preventDefault()
     if (busy) return
     const found = validateStep(step, f, days)
     if (step === 4 && f.day && f.slot && takenSet.has(slotKey(f.day, f.slot))) {
@@ -92,8 +93,14 @@ export function BookingFlow({ days, initialTaken, initialMine }: Props) {
       return
     }
     setErrs({})
-    if (step < 4) return setStep(step + 1)
+    if (step < total - 1) return setStep(step + 1)
     submit()
+  }
+
+  function back() {
+    setErrs({})
+    setFormMsg('')
+    setStep(Math.max(0, step - 1))
   }
 
   function submit() {
@@ -141,7 +148,7 @@ export function BookingFlow({ days, initialTaken, initialMine }: Props) {
     <div className="field">
       <label htmlFor={id}>
         {label}
-        {optional && <i>optional</i>}
+        {optional && <i>Optional</i>}
       </label>
       <input
         id={id}
@@ -186,53 +193,19 @@ export function BookingFlow({ days, initialTaken, initialMine }: Props) {
     )
   })()
 
-  const side = (
-    <aside className="side" aria-label="About the call">
-      <h2 className="label" style={{ color: 'var(--faint)' }}>
-        On the call
-      </h2>
-      <ol>
-        {ON_THE_CALL.map(([n, head, text]) => (
-          <li key={n}>
-            <span className="label">{n}</span>
-            <div>
-              <b>{head}</b>
-              <span>{text}</span>
-            </div>
-          </li>
-        ))}
-      </ol>
-      <div className="sign">
-        <p className="label">Builds from</p>
-        <p className="big">£249</p>
-        <p>Pro £249 and Ultimate £349, fixed. Half to start, half once you have approved the site, before it goes live.</p>
-      </div>
-      <p className="alt">
-        Prefer email? <strong>{CONTACT_EMAIL}</strong> reaches the same place.
-      </p>
-    </aside>
-  )
-
   if (done) {
     const b = mine.find((x) => x.ref === done.ref) ?? done
     const first = b.name.trim().split(/\s+/)[0] || 'there'
     return (
-      <div className="layout">
-        <div>
-          <ol className="progress" aria-label="Progress">
-            {STEPS.map((s) => (
-              <li key={s.title} className="on" />
-            ))}
-          </ol>
-          <p className="label kick">Request sent</p>
-          <h1 className="display" tabIndex={-1} ref={heading}>
+      <>
+        <TopBar count="Done" progress={1} />
+        <main id="main" className="stage step-in">
+          <p className="label">Request sent · Ref {b.ref}</p>
+          <h1 className="display" tabIndex={-1} ref={heading} style={{ marginTop: 14 }}>
             You are on the way, {first}
             <span className="kick">.</span>
           </h1>
           <p className="sub">Your request is with me. I will confirm the time by email, normally within one working day.</p>
-          <p className="label" style={{ marginTop: 16, color: 'var(--faint)' }}>
-            Ref {b.ref}
-          </p>
           <div className="body">
             <dl className="facts">
               <div className="fact">
@@ -254,10 +227,6 @@ export function BookingFlow({ days, initialTaken, initialMine }: Props) {
               <div className="fact">
                 <dt>Working budget</dt>
                 <dd>{b.budget}</dd>
-              </div>
-              <div className="fact">
-                <dt>Timeline</dt>
-                <dd>{b.timeline}</dd>
               </div>
             </dl>
             <ol className="steps">
@@ -283,202 +252,184 @@ export function BookingFlow({ days, initialTaken, initialMine }: Props) {
                 </div>
               </li>
             </ol>
-            <div className="controls" style={{ border: 0, paddingTop: 0 }}>
-              <button className="btn" type="button" onClick={again}>
-                Book another call
-              </button>
-            </div>
           </div>
           {mineList}
+        </main>
+        <div className="actions">
+          <div className="actions-in">
+            <button className="btn grow" type="button" onClick={again}>
+              Book another call
+            </button>
+          </div>
         </div>
-        {side}
-      </div>
+      </>
     )
   }
 
   const st = STEPS[step]
-  const last = step === STEPS.length - 1
+  const last = step === total - 1
 
   return (
-    <div className="layout">
-      <div>
-        <ol className="progress" aria-label={`Step ${step + 1} of ${STEPS.length}`}>
-          {STEPS.map((s, i) => (
-            <li key={s.title} className={i <= step ? 'on' : ''} />
-          ))}
-        </ol>
-        <p className="label kick">
-          Book a call · Step {step + 1} of {STEPS.length}
-        </p>
-        <h1 className="display" tabIndex={-1} ref={heading}>
-          {st.title}
-          <span className="kick">{st.mark}</span>
-        </h1>
-        <p className="sub">{st.sub}</p>
-
-        <form className="body" noValidate onSubmit={next}>
+    <>
+      <TopBar count={`${step + 1} / ${total}`} progress={(step + 1) / total} />
+      <main id="main" className="stage">
+        <form id="flow" noValidate onSubmit={next} aria-label={`Book a call, step ${step + 1} of ${total}`}>
           {/* Honeypot: hidden from people, irresistible to bots. */}
           <div className="hp" aria-hidden="true">
             <label htmlFor="website">Leave this empty</label>
             <input id="website" name="website" ref={trap} tabIndex={-1} autoComplete="off" defaultValue="" />
           </div>
 
-          {step === 0 && (
-            <>
-              <fieldset style={{ border: 0, padding: 0, margin: 0 }}>
-                <legend className="sr">What do you need help with?</legend>
-                <div className="pills" id="help" tabIndex={-1}>
-                  {HELP_OPTIONS.map((h) => (
-                    <button key={h} type="button" className="pill" aria-pressed={f.help.includes(h)} onClick={() => toggleHelp(h)}>
-                      {h}
-                    </button>
-                  ))}
+          <div className="step-in" key={step}>
+            <h1 className="display" tabIndex={-1} ref={heading}>
+              {st.title}
+              {st.mark === '?' ? '?' : ''}
+            </h1>
+            <p className="sub">{st.sub}</p>
+
+            <div className="body">
+              {step === 0 && (
+                <>
+                  <fieldset style={{ border: 0, padding: 0, margin: 0 }}>
+                    <legend className="sr">What do you need help with?</legend>
+                    <div className="pills" id="help" tabIndex={-1}>
+                      {HELP_OPTIONS.map((h) => (
+                        <button key={h} type="button" className="pill" aria-pressed={f.help.includes(h)} onClick={() => toggleHelp(h)}>
+                          <HelpIcon name={h} />
+                          {h}
+                        </button>
+                      ))}
+                    </div>
+                    {err('help')}
+                  </fieldset>
+                  <div className="group">
+                    <label className="q" htmlFor="other">
+                      Anything else I should know?<span className="opt">Optional</span>
+                    </label>
+                    <textarea
+                      id="other"
+                      rows={3}
+                      style={{ marginTop: 12 }}
+                      placeholder="Sites you like, features you need, what is not working now."
+                      value={f.other}
+                      onChange={(e) => set('other', e.target.value)}
+                      aria-invalid={errs.other ? true : undefined}
+                    />
+                    {err('other')}
+                  </div>
+                </>
+              )}
+
+              {step === 1 && (
+                <>
+                  <div className="cards" role="group" aria-label="Working budget" id="budget" tabIndex={-1}>
+                    {BUDGETS.map((b) => (
+                      <button key={b.id} type="button" className="card" aria-pressed={f.budget === b.label} onClick={() => set('budget', b.label)}>
+                        <span className="t">{b.label}</span>
+                        <span className="d">{b.note}</span>
+                      </button>
+                    ))}
+                  </div>
+                  {err('budget')}
+                  <div className="group">
+                    <h2>
+                      Open to a monthly plan?<span className="opt">Optional</span>
+                    </h2>
+                    <p className="hint">Hosting, edits and support from £39 a month. Optional, and the first month is free.</p>
+                    <div className="pills">
+                      {PLAN_OPTIONS.map((p) => (
+                        <button key={p} type="button" className="pill sm" aria-pressed={f.plan === p} onClick={() => set('plan', f.plan === p ? '' : p)}>
+                          {p}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {step === 2 && (
+                <>
+                  <div className="pills col" role="group" aria-label="Timeline" id="timeline" tabIndex={-1}>
+                    {TIMELINES.map((t) => (
+                      <button key={t} type="button" className="pill" aria-pressed={f.timeline === t} onClick={() => set('timeline', t)}>
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                  {err('timeline')}
+                </>
+              )}
+
+              {step === 3 && (
+                <div className="stack">
+                  <div className="grid2">
+                    {field('name', 'Your name', 'text', false, 'name')}
+                    {field('business', 'Business name', 'text', true, 'organization')}
+                    {field('email', 'Email', 'email', false, 'email')}
+                    {field('phone', 'Phone', 'tel', true, 'tel')}
+                  </div>
+                  {field('site', 'Current website or Instagram', 'text', true, 'url')}
                 </div>
-                {err('help')}
-              </fieldset>
-              <div className="group">
-                <label className="q" htmlFor="other">
-                  What else do you need?<span className="opt">optional</span>
-                </label>
-                <textarea
-                  id="other"
-                  rows={3}
-                  style={{ marginTop: 16 }}
-                  placeholder="Anything that would help me prepare: sites you like, features you need, what is not working now."
-                  value={f.other}
-                  onChange={(e) => set('other', e.target.value)}
-                  aria-invalid={errs.other ? true : undefined}
-                />
-                {err('other')}
-              </div>
-            </>
-          )}
+              )}
 
-          {step === 1 && (
-            <>
-              <div className="cards" role="group" aria-label="Working budget" id="budget" tabIndex={-1}>
-                {BUDGETS.map((b) => (
-                  <button key={b.id} type="button" className="card" aria-pressed={f.budget === b.label} onClick={() => set('budget', b.label)}>
-                    <span className="t">{b.label}</span>
-                    <span className="d">{b.note}</span>
-                  </button>
-                ))}
-              </div>
-              {err('budget')}
-              <div className="group">
-                <h2>
-                  Open to a monthly plan?<span className="opt">optional</span>
-                </h2>
-                <p className="hint">Hosting, edits and support for a set monthly fee, from £39 a month. Optional, and the first month is free.</p>
-                <div className="pills">
-                  {PLAN_OPTIONS.map((p) => (
-                    <button key={p} type="button" className="pill sm" aria-pressed={f.plan === p} onClick={() => set('plan', f.plan === p ? '' : p)}>
-                      {p}
-                    </button>
-                  ))}
+              {step === 4 && (
+                <>
+                  <div>
+                    <p className="label" style={{ marginBottom: 12 }}>
+                      Day
+                    </p>
+                    <div id="day" tabIndex={-1}>
+                      <DayGrid
+                        days={days}
+                        selected={f.day}
+                        taken={takenSet}
+                        onPick={(d) => {
+                          set('day', d)
+                          set('slot', '')
+                        }}
+                      />
+                    </div>
+                    {err('day')}
+                  </div>
+                  <div style={{ marginTop: 28 }}>
+                    <p className="label" style={{ marginBottom: 12 }}>
+                      Time{f.day ? ` · ${longDay(f.day)}` : ''}
+                    </p>
+                    <div id="slot" tabIndex={-1}>
+                      <SlotGrid day={f.day} selected={f.slot} taken={takenSet} onPick={(t) => set('slot', t)} />
+                    </div>
+                    {err('slot')}
+                    <p className="note" style={{ marginTop: 16 }}>
+                      This is a preferred time until I confirm it by email. Sending this does not commit you to anything or take payment.
+                    </p>
+                  </div>
+                </>
+              )}
+
+              {formMsg && (
+                <div className="banner" role="alert" style={{ marginTop: 24 }}>
+                  {formMsg}
                 </div>
-              </div>
-            </>
-          )}
-
-          {step === 2 && (
-            <>
-              <div className="pills" role="group" aria-label="Timeline" id="timeline" tabIndex={-1}>
-                {TIMELINES.map((t) => (
-                  <button key={t} type="button" className="pill" aria-pressed={f.timeline === t} onClick={() => set('timeline', t)}>
-                    {t}
-                  </button>
-                ))}
-              </div>
-              {err('timeline')}
-            </>
-          )}
-
-          {step === 3 && (
-            <div className="stack">
-              <div className="grid2">
-                {field('name', 'Your name', 'text', false, 'name')}
-                {field('business', 'Business name', 'text', true, 'organization')}
-                {field('email', 'Email', 'email', false, 'email')}
-                {field('phone', 'Phone', 'tel', true, 'tel')}
-              </div>
-              <div className="grid2" style={{ gridTemplateColumns: 'minmax(0,1fr)' }}>
-                {field('site', 'Current website or Instagram', 'text', true, 'url')}
-              </div>
-            </div>
-          )}
-
-          {step === 4 && (
-            <>
-              <div>
-                <p className="label" style={{ marginBottom: 12 }}>
-                  Day
-                </p>
-                <div id="day" tabIndex={-1}>
-                  <DayGrid
-                    days={days}
-                    selected={f.day}
-                    taken={takenSet}
-                    onPick={(d) => {
-                      set('day', d)
-                      set('slot', '')
-                    }}
-                  />
-                </div>
-                {err('day')}
-              </div>
-              <div style={{ marginTop: 32 }}>
-                <p className="label" style={{ marginBottom: 12 }}>
-                  Time
-                  {f.day && (
-                    <span style={{ color: 'var(--faint)', textTransform: 'none', letterSpacing: 0 }}> · {longDay(f.day)}</span>
-                  )}
-                </p>
-                <div id="slot" tabIndex={-1}>
-                  <SlotGrid day={f.day} selected={f.slot} taken={takenSet} onPick={(t) => set('slot', t)} />
-                </div>
-                {err('slot')}
-                <p className="note" style={{ marginTop: 16 }}>
-                  This is a preferred time, not a confirmed one. I check the diary and confirm by email. Sending this does not commit you to
-                  anything or take payment.
-                </p>
-              </div>
-            </>
-          )}
-
-          {formMsg && (
-            <div className="banner" role="alert" style={{ marginTop: 28 }}>
-              {formMsg}
-            </div>
-          )}
-
-          <div className="controls">
-            <div>
-              {step > 0 ? (
-                <button
-                  className="link"
-                  type="button"
-                  onClick={() => {
-                    setErrs({})
-                    setFormMsg('')
-                    setStep(step - 1)
-                  }}
-                >
-                  Back
-                </button>
-              ) : (
-                <span className="fine">Free 20-minute call · No obligation</span>
               )}
             </div>
-            <button className="btn solid" type="submit" disabled={busy}>
-              {last ? (busy ? 'Sending…' : 'Request this time') : 'Continue'}
-              {!busy && <span aria-hidden="true">→</span>}
-            </button>
           </div>
         </form>
         {mineList}
+      </main>
+
+      <div className="actions">
+        <div className="actions-in">
+          {step > 0 && (
+            <button className="back" type="button" onClick={back}>
+              Back
+            </button>
+          )}
+          <button className="btn solid grow" type="submit" form="flow" disabled={busy}>
+            {last ? (busy ? 'Sending…' : 'Request this time') : 'Continue'}
+          </button>
+        </div>
+        {step === 0 && <p className="fine">Free 20-minute call · No obligation</p>}
       </div>
-      {side}
-    </div>
+    </>
   )
 }
