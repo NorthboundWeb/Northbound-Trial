@@ -318,7 +318,7 @@ export function Shot(): JSX.Element {
             <span>Electrical · Leicester</span>
           </span>
         </span>
-        <span className={styles.shotLinks}>Services · Photo quote · EV chargers · Certificates · FAQ</span>
+        <span className={styles.shotLinks}>{'Services      Photo quote      EV chargers      Certificates      FAQ'}</span>
         <span className={`${styles.btnYellow} ${styles.navCta}`}>Get a quote</span>
       </div>
       <div className={styles.hero}>

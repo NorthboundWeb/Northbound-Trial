@@ -1460,6 +1460,10 @@
   font-weight: 700;
 }
 
+.repSteps li > span {
+  min-width: 0;
+}
+
 .repSteps b {
   color: #ffffff;
 }
@@ -2000,11 +2004,16 @@
 .shotLinks {
   font-size: 15px;
   font-weight: 500;
-  word-spacing: 6px;
+  white-space: pre;
 }
 
 .shot .hero {
   height: 728px;
+}
+
+.shot .heroStrip {
+  max-width: none;
+  padding: 24px 40px;
 }
 
 .shot .heroIn {

@@ -436,7 +436,6 @@
   letter-spacing: .14em;
   text-transform: uppercase;
   color: var(--muted);
-  word-spacing: 8px;
 }
 
 .ticker i {
@@ -1812,7 +1811,7 @@
 .shotLinks {
   font-size: 14px;
   font-weight: 600;
-  word-spacing: 6px;
+  white-space: pre;
 }
 
 .shot .hero {
@@ -1831,5 +1830,4 @@
 
 .shot .ticker {
   margin-top: 40px;
-  word-spacing: 10px;
 }

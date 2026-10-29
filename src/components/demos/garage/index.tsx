@@ -221,13 +221,19 @@ export function Site(): JSX.Element {
             </p>
             <ol className={styles.repSteps}>
               <li>
-                <b>We test</b> and photograph anything we find.
+                <span>
+                  <b>We test</b> and photograph anything we find.
+                </span>
               </li>
               <li>
-                <b>You choose</b> item by item, from your phone.
+                <span>
+                  <b>You choose</b> item by item, from your phone.
+                </span>
               </li>
               <li>
-                <b>We fix</b> only what you approved, and text when it is ready.
+                <span>
+                  <b>We fix</b> only what you approved, and text when it is ready.
+                </span>
               </li>
             </ol>
           </div>
@@ -331,7 +337,7 @@ export function Shot(): JSX.Element {
             <span>MOT · Service · Repair</span>
           </span>
         </span>
-        <span className={styles.shotLinks}>Prices · MOT date · Book · Repairs · FAQ</span>
+        <span className={styles.shotLinks}>{'Prices      MOT date      Book      Repairs      FAQ'}</span>
         <span className={`${styles.btnGreen} ${styles.navCta}`}>Book an MOT</span>
       </div>
       <div className={styles.hero}>
@@ -366,6 +372,11 @@ export function Shot(): JSX.Element {
             </div>
             <Car colour="#15803d" lifted={false} />
           </div>
+        </div>
+        <div className={styles.heroStrip}>
+          <span>£45 MOT, free retest within 10 working days</span>
+          <span>Text when it&rsquo;s done</span>
+          <span>Approve any repairs online first</span>
         </div>
       </div>
     </div>

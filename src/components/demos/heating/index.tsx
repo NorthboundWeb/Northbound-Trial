@@ -349,7 +349,7 @@ export function Shot(): JSX.Element {
             <b>Thornley</b> Heating
           </span>
         </span>
-        <span className={styles.shotLinks}>Emergency? · Prices · Book · How it works · FAQ</span>
+        <span className={styles.shotLinks}>{'Emergency?      Prices      Book      How it works      FAQ'}</span>
         <span className={`${styles.btnRed} ${styles.navCta}`}>Book a visit</span>
       </div>
       <div className={`${styles.hero} ${styles.shotHero}`}>
@@ -368,6 +368,17 @@ export function Shot(): JSX.Element {
           <div className={styles.ctas}>
             <span className={styles.btnRed}>Book a visit</span>
             <span className={styles.btnGhost}>Get a price</span>
+          </div>
+          <div className={styles.facts}>
+            <p>
+              <b>Before 11am</b> same-day visit
+            </p>
+            <p>
+              <b>Price first</b> before a spanner
+            </p>
+            <p>
+              <b>Text alerts</b> when we set off
+            </p>
           </div>
         </div>
         <div className={styles.heroArt}>
