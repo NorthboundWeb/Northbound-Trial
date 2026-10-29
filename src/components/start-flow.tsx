@@ -1,0 +1,821 @@
+'use client'
+
+import Link from 'next/link'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { CONTACT_EMAIL } from '@/lib/booking/options'
+import { messageHref } from '@/lib/contact'
+import {
+  BUILD_OPTIONS,
+  LAST_BOOKABLE_DAYS,
+  MAX_PHOTOS,
+  OFFER,
+  PHOTO_MAX_BYTES,
+  PHOTO_MAX_EDGE,
+  REPLY_OPTIONS,
+  STEPS,
+  addDays,
+  dayDiff,
+  dayKind,
+  emptyStart,
+  fmtDay,
+  validateStep,
+  type DayKind,
+  type Photo,
+  type StartForm,
+  type StepId,
+} from '@/lib/start/options'
+import { goWithCurtain } from './curtain'
+import { SWIPE_BACK_EVENT } from './swipe-back'
+import { TopBar } from './top-bar'
+
+/**
+ * "Start a project": the free-build request.
+ *
+ * Eight short screens. A step rail across the top and a live summary down the
+ * side are both clickable, so wherever you click takes you to the screen that
+ * deals with it. Each screen is a history entry (?step=photos and so on), so
+ * back, the phone's edge swipe and the site's swipe gesture step back one.
+ */
+
+const IDS = STEPS.map((s) => s.id)
+const idx = (id: StepId) => IDS.indexOf(id)
+
+const DETAIL_PROMPTS = [
+  'Who your customers are',
+  'Pages you need',
+  'Features (bookings, shop, forms…)',
+  'Colours or style you like',
+  'Sites you like the look of',
+]
+
+const KIND_LABEL: Record<DayKind, string> = {
+  past: '',
+  processing: 'Processing',
+  building: 'Building',
+  maybe: 'May move',
+  open: '',
+}
+
+async function compress(file: File): Promise<Photo | null> {
+  if (!file.type.startsWith('image/')) return null
+  try {
+    const bmp = await createImageBitmap(file)
+    const scale = Math.min(1, PHOTO_MAX_EDGE / Math.max(bmp.width, bmp.height))
+    const w = Math.max(1, Math.round(bmp.width * scale))
+    const h = Math.max(1, Math.round(bmp.height * scale))
+    const canvas = document.createElement('canvas')
+    canvas.width = w
+    canvas.height = h
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return null
+    ctx.drawImage(bmp, 0, 0, w, h)
+    bmp.close()
+    let quality = 0.82
+    let blob: Blob | null = null
+    for (let i = 0; i < 4; i++) {
+      blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/jpeg', quality))
+      if (blob && blob.size <= PHOTO_MAX_BYTES) break
+      quality -= 0.15
+    }
+    if (!blob || blob.size > PHOTO_MAX_BYTES) return null
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const fr = new FileReader()
+      fr.onload = () => resolve(String(fr.result))
+      fr.onerror = () => reject(fr.error)
+      fr.readAsDataURL(blob as Blob)
+    })
+    return {
+      id: `${file.name}-${file.size}-${file.lastModified}`,
+      name: file.name,
+      type: 'image/jpeg',
+      data: dataUrl.split(',')[1] ?? '',
+      preview: dataUrl,
+      bytes: blob.size,
+    }
+  } catch {
+    return null
+  }
+}
+
+export function StartFlow() {
+  const [step, setStep] = useState<StepId>('offer')
+  const [f, setF] = useState<StartForm>(emptyStart)
+  const [photos, setPhotos] = useState<Photo[]>([])
+  const [photoMsg, setPhotoMsg] = useState('')
+  const [processing, setProcessing] = useState(false)
+  const [dragging, setDragging] = useState(false)
+  const [errs, setErrs] = useState<Record<string, string>>({})
+  const [formMsg, setFormMsg] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [sent, setSent] = useState<{ ref: string; name: string; replyVia: string; date: string } | null>(null)
+  const [today, setToday] = useState('')
+  const [month, setMonth] = useState(0)
+  const [summaryOpen, setSummaryOpen] = useState(false)
+
+  const heading = useRef<HTMLHeadingElement>(null)
+  const trap = useRef<HTMLInputElement>(null)
+  const fileInput = useRef<HTMLInputElement>(null)
+  const detailsBox = useRef<HTMLTextAreaElement>(null)
+  const startedAt = useRef(0)
+  const firstRender = useRef(true)
+  const sentRef = useRef(sent)
+
+  useEffect(() => {
+    startedAt.current = Date.now()
+    if (window.location.search.includes('step=')) window.history.replaceState(null, '', window.location.pathname)
+    const t = setTimeout(() => setToday(new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())), 0)
+    return () => clearTimeout(t)
+  }, [])
+
+  useEffect(() => {
+    sentRef.current = sent
+  }, [sent])
+
+  useEffect(() => {
+    const read = (): StepId => {
+      const q = new URLSearchParams(window.location.search).get('step')
+      return (IDS as readonly string[]).includes(q ?? '') ? (q as StepId) : 'offer'
+    }
+    const onPop = () => {
+      if (sentRef.current) return goWithCurtain('/')
+      setErrs({})
+      setFormMsg('')
+      setStep(read())
+    }
+    const onSwipe = (e: Event) => {
+      if (sentRef.current) return
+      if (read() !== 'offer') {
+        e.preventDefault()
+        window.history.back()
+      }
+    }
+    window.addEventListener('popstate', onPop)
+    window.addEventListener(SWIPE_BACK_EVENT, onSwipe)
+    return () => {
+      window.removeEventListener('popstate', onPop)
+      window.removeEventListener(SWIPE_BACK_EVENT, onSwipe)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false
+      return
+    }
+    heading.current?.focus({ preventScroll: true })
+    window.scrollTo({ top: 0 })
+  }, [step, sent])
+
+  const set = <K extends keyof StartForm>(k: K, v: StartForm[K]) => {
+    setF((prev) => ({ ...prev, [k]: v }))
+    setErrs((prev) => {
+      if (!prev[k as string]) return prev
+      const next = { ...prev }
+      delete next[k as string]
+      return next
+    })
+  }
+
+  function goTo(id: StepId) {
+    if (id === step) return
+    setErrs({})
+    setFormMsg('')
+    setSummaryOpen(false)
+    window.history.pushState(null, '', id === 'offer' ? window.location.pathname : `?step=${id}`)
+    setStep(id)
+  }
+
+  function next() {
+    if (busy) return
+    const found = validateStep(step, f, today)
+    if (Object.keys(found).length) {
+      setErrs(found)
+      const first = Object.keys(found)[0]
+      requestAnimationFrame(() => document.getElementById(`sf-${first}`)?.focus())
+      return
+    }
+    if (step === 'review') return submit()
+    goTo(IDS[idx(step) + 1])
+  }
+
+  function back() {
+    if (new URLSearchParams(window.location.search).get('step')) window.history.back()
+    else goTo(IDS[Math.max(0, idx(step) - 1)])
+  }
+
+  async function addFiles(list: FileList | File[]) {
+    const files = Array.from(list)
+    if (!files.length) return
+    setProcessing(true)
+    setPhotoMsg('')
+    const room = MAX_PHOTOS - photos.length
+    const take = files.slice(0, Math.max(0, room))
+    const skipped: string[] = []
+    if (files.length > room) skipped.push(`${files.length - room} over the limit of ${MAX_PHOTOS}`)
+    const done: Photo[] = []
+    for (const file of take) {
+      const p = await compress(file)
+      if (p) done.push(p)
+      else skipped.push(file.name)
+    }
+    setPhotos((prev) => {
+      const seen = new Set(prev.map((p) => p.id))
+      return [...prev, ...done.filter((p) => !seen.has(p.id))].slice(0, MAX_PHOTOS)
+    })
+    setProcessing(false)
+    setPhotoMsg(
+      done.length
+        ? `Added ${done.length} photo${done.length === 1 ? '' : 's'}.${skipped.length ? ` Skipped: ${skipped.join(', ')}.` : ''}`
+        : skipped.length
+          ? `Could not add: ${skipped.join(', ')}. Photos only (JPG, PNG, HEIC from most phones works).`
+          : ''
+    )
+  }
+
+  function addPrompt(p: string) {
+    const line = `${p}: `
+    const cur = f.details
+    const nextText = cur && !cur.endsWith('\n') ? `${cur}\n${line}` : `${cur}${line}`
+    set('details', nextText)
+    requestAnimationFrame(() => {
+      const el = detailsBox.current
+      if (!el) return
+      el.focus()
+      el.setSelectionRange(nextText.length, nextText.length)
+    })
+  }
+
+  async function submit() {
+    setBusy(true)
+    setFormMsg('')
+    try {
+      const res = await fetch('/api/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          form: f,
+          photos: photos.map((p) => ({ name: p.name, type: p.type, data: p.data })),
+          startedAt: startedAt.current,
+          trap: trap.current?.value ?? '',
+        }),
+      })
+      const out = (await res.json().catch(() => null)) as { ok?: boolean; ref?: string; step?: StepId; errors?: Record<string, string>; message?: string } | null
+      if (out?.ok && out.ref) {
+        setSent({ ref: out.ref, name: f.name, replyVia: f.replyVia, date: f.date })
+        return
+      }
+      if (out?.step && out.step !== step) {
+        window.history.replaceState(null, '', `?step=${out.step}`)
+        setStep(out.step)
+      }
+      setErrs(out?.errors ?? {})
+      setFormMsg(out?.message ?? `That did not send. Please message me on WhatsApp or email ${CONTACT_EMAIL}.`)
+    } catch {
+      setFormMsg(`That did not send. Please message me on WhatsApp or email ${CONTACT_EMAIL}.`)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  // ---- calendar ---------------------------------------------------------------
+  const months = useMemo(() => {
+    if (!today) return []
+    const out: { key: string; label: string; cells: (string | null)[] }[] = []
+    const [y0, m0] = today.split('-').map(Number)
+    for (let k = 0; k < 5; k++) {
+      const y = y0 + Math.floor((m0 - 1 + k) / 12)
+      const m = ((m0 - 1 + k) % 12) + 1
+      const first = `${y}-${String(m).padStart(2, '0')}-01`
+      const lead = (new Date(`${first}T12:00:00Z`).getUTCDay() + 6) % 7
+      const days = new Date(Date.UTC(y, m, 0)).getUTCDate()
+      const cells: (string | null)[] = Array.from({ length: lead }, () => null)
+      for (let d = 1; d <= days; d++) cells.push(`${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`)
+      out.push({ key: first, label: fmtDay(first, { month: 'long', year: 'numeric' }), cells })
+    }
+    return out
+  }, [today])
+
+  const err = (k: string) =>
+    errs[k] ? (
+      <p className="err" role="alert" id={`sf-e-${k}`}>
+        {errs[k]}
+      </p>
+    ) : null
+
+  const input = (k: 'business' | 'trade' | 'website' | 'portfolio' | 'name' | 'email' | 'phone', label: string, opts: { type?: string; ac?: string; optional?: boolean; placeholder?: string; hint?: string } = {}) => (
+    <div className="field">
+      <label htmlFor={`sf-${k}`}>
+        {label}
+        {opts.optional && <i>Optional</i>}
+      </label>
+      <input
+        id={`sf-${k}`}
+        type={opts.type ?? 'text'}
+        autoComplete={opts.ac ?? 'off'}
+        placeholder={opts.placeholder}
+        value={f[k]}
+        onChange={(e) => set(k, e.target.value)}
+        aria-invalid={errs[k] ? true : undefined}
+        aria-describedby={errs[k] ? `sf-e-${k}` : undefined}
+      />
+      {opts.hint && !errs[k] && <p className="note">{opts.hint}</p>}
+      {err(k)}
+    </div>
+  )
+
+  // ---- summary (clickable) -------------------------------------------------------
+  const filledSocials = f.socials.filter((s) => s.trim())
+  const summary: { id: StepId; label: string; value: string; done: boolean }[] = [
+    { id: 'build', label: 'Build', value: f.build.join(', ') || 'Not chosen yet', done: f.build.length > 0 },
+    {
+      id: 'details',
+      label: 'Details',
+      value: f.details.trim() ? `${f.business.trim() ? `${f.business.trim()}: ` : ''}${f.details.trim().slice(0, 70)}${f.details.trim().length > 70 ? '…' : ''}` : 'Nothing yet',
+      done: f.details.trim().length >= 20,
+    },
+    { id: 'photos', label: 'Photos', value: photos.length ? `${photos.length} added` : 'None (optional)', done: photos.length > 0 },
+    {
+      id: 'links',
+      label: 'Links',
+      value: [f.website.trim() && 'Website', filledSocials.length && `${filledSocials.length} social`, f.portfolio.trim() && 'Portfolio'].filter(Boolean).join(' · ') || 'None (optional)',
+      done: !!(f.website.trim() || filledSocials.length || f.portfolio.trim()),
+    },
+    { id: 'date', label: 'Wanted by', value: f.date ? fmtDay(f.date, { weekday: 'short', day: 'numeric', month: 'short' }) : 'Pick a date', done: !!f.date },
+    { id: 'you', label: 'You', value: f.name.trim() ? `${f.name.trim()} · ${f.replyVia === 'whatsapp' ? 'WhatsApp' : f.replyVia === 'email' ? 'Email' : 'reply?'}` : 'Not filled in', done: !!(f.name.trim() && f.email.trim() && f.replyVia) },
+  ]
+  const doneCount = summary.filter((s) => s.done).length
+
+  // ---- sent ------------------------------------------------------------------------
+  if (sent) {
+    const first = sent.name.trim().split(/\s+/)[0] || 'there'
+    const how = sent.replyVia === 'whatsapp' ? 'on WhatsApp' : 'by email'
+    const d0 = today || sent.date
+    return (
+      <>
+        <TopBar count="Sent" progress={1} />
+        <div className="stage sf-stage step-in" id="main">
+          <p className="label">Request sent · Ref {sent.ref}</p>
+          <h1 className="display" tabIndex={-1} ref={heading} style={{ marginTop: 14 }}>
+            Thanks, {first}. I am on it<span className="kick">.</span>
+          </h1>
+          <p className="sub">I will reply {how} once I have read everything. You do not pay anything unless you love what I build.</p>
+          <ol className="sf-timeline" aria-label="What happens next">
+            <li className="k-processing">
+              <b>{fmtDay(d0, { weekday: 'short', day: 'numeric', month: 'short' })}</b>
+              <span>Processing your request (up to 24 hours)</span>
+            </li>
+            <li className="k-building">
+              <b>
+                {fmtDay(addDays(d0, 1), { weekday: 'short', day: 'numeric' })} – {fmtDay(addDays(d0, 3), { weekday: 'short', day: 'numeric', month: 'short' })}
+              </b>
+              <span>Building (estimated 72 hours)</span>
+            </li>
+            <li className="k-open">
+              <b>{fmtDay(sent.date, { weekday: 'short', day: 'numeric', month: 'short' })}</b>
+              <span>Your website, ready to look at</span>
+            </li>
+          </ol>
+          <p className="note" style={{ marginTop: 24 }}>
+            If you love it, you buy it. If you do not, that is the end of it: I will not contact you again. Anything to add? Quote {sent.ref} on{' '}
+            <a href={messageHref()} target="_blank" rel="noopener noreferrer">
+              WhatsApp
+            </a>{' '}
+            or at <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(sent.ref)}`}>{CONTACT_EMAIL}</a>.
+          </p>
+        </div>
+        <div className="actions">
+          <div className="actions-in">
+            <Link className="btn grow" href="/work">
+              See what I have built
+            </Link>
+          </div>
+        </div>
+      </>
+    )
+  }
+
+  const at = idx(step)
+  const isOffer = step === 'offer'
+
+  return (
+    <>
+      <TopBar count={isOffer ? 'Free build' : `${at} / ${STEPS.length - 1}`} progress={at / (STEPS.length - 1)} />
+      <div className="sf-wrap" id="main">
+        <nav className="sf-rail" aria-label="Steps">
+          <ol>
+            {STEPS.map((s, i) => (
+              <li key={s.id}>
+                <button
+                  type="button"
+                  className={`sf-rail-btn${s.id === step ? ' on' : ''}${i < at ? ' past' : ''}`}
+                  aria-current={s.id === step ? 'step' : undefined}
+                  onClick={() => goTo(s.id)}
+                >
+                  <span aria-hidden="true">{i === 0 ? '★' : i}</span>
+                  {s.label}
+                </button>
+              </li>
+            ))}
+          </ol>
+        </nav>
+
+        <div className="sf-grid">
+          <form
+            className="sf-main"
+            noValidate
+            onSubmit={(e) => {
+              e.preventDefault()
+              next()
+            }}
+            aria-label={`Start a project: ${STEPS[at].label}`}
+            id="sf-form"
+          >
+            <div className="hp" aria-hidden="true">
+              <label htmlFor="sf-website-trap">Leave this empty</label>
+              <input id="sf-website-trap" ref={trap} tabIndex={-1} autoComplete="off" defaultValue="" />
+            </div>
+
+            <div className="step-in" key={step}>
+              {isOffer && (
+                <>
+                  <p className="label sf-kick">No deposit · No obligation</p>
+                  <h1 className="display sf-hero" tabIndex={-1} ref={heading}>
+                    {OFFER.headline}
+                  </h1>
+                  <p className="sub">Tell me what you need. I build it. If you love it, you buy it. If you do not, I will not contact you again.</p>
+                  <div className="sf-offer">
+                    {OFFER.points.map((p) => (
+                      <button key={p.id} type="button" className="sf-offer-card" onClick={() => goTo('build')}>
+                        <b>{p.title}</b>
+                        <span>{p.body}</span>
+                        <i aria-hidden="true">Start →</i>
+                      </button>
+                    ))}
+                  </div>
+                  <button type="button" className="sf-time" onClick={() => goTo('date')}>
+                    <span className="sf-time-bar" aria-hidden="true">
+                      <span className="k-processing">1</span>
+                      <span className="k-building">2</span>
+                      <span className="k-building">3</span>
+                      <span className="k-building">4</span>
+                      <span className="k-maybe">5</span>
+                      <span className="k-maybe">6</span>
+                      <span className="k-maybe">7</span>
+                    </span>
+                    <span className="sf-time-text">
+                      <b>{OFFER.timing.processing}</b> {OFFER.timing.build} <u>Pick your date →</u>
+                    </span>
+                  </button>
+                </>
+              )}
+
+              {step === 'build' && (
+                <>
+                  <h1 className="display" tabIndex={-1} ref={heading}>
+                    What should I build?
+                  </h1>
+                  <p className="sub">Pick everything that applies. I build websites and systems of any size.</p>
+                  <div className="body">
+                    <div className="pills" id="sf-build" tabIndex={-1} role="group" aria-label="What to build">
+                      {BUILD_OPTIONS.map((b) => (
+                        <button
+                          key={b}
+                          type="button"
+                          className="pill"
+                          aria-pressed={f.build.includes(b)}
+                          onClick={() => set('build', f.build.includes(b) ? f.build.filter((x) => x !== b) : [...f.build, b])}
+                        >
+                          {b}
+                        </button>
+                      ))}
+                    </div>
+                    {err('build')}
+                  </div>
+                </>
+              )}
+
+              {step === 'details' && (
+                <>
+                  <h1 className="display" tabIndex={-1} ref={heading}>
+                    Give me as much detail as you can.
+                  </h1>
+                  <p className="sub">The more I know, the closer the first version will be. Tap a prompt to add it.</p>
+                  <div className="body stack">
+                    <div className="grid2">
+                      {input('business', 'Business name', { optional: true, ac: 'organization' })}
+                      {input('trade', 'What you do', { optional: true, placeholder: 'e.g. mobile dog groomer in Leeds' })}
+                    </div>
+                    <div className="sf-prompts" role="group" aria-label="Add a prompt">
+                      {DETAIL_PROMPTS.map((p) => (
+                        <button key={p} type="button" className="pill sm" onClick={() => addPrompt(p)}>
+                          + {p}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="field">
+                      <label htmlFor="sf-details">Your details</label>
+                      <textarea
+                        id="sf-details"
+                        ref={detailsBox}
+                        rows={9}
+                        value={f.details}
+                        onChange={(e) => set('details', e.target.value)}
+                        placeholder="What the business does, who it is for, what the website or system needs to do, anything you love or hate about other sites…"
+                        aria-invalid={errs.details ? true : undefined}
+                        aria-describedby="sf-meter"
+                      />
+                      <div className="sf-meter" id="sf-meter">
+                        <span style={{ width: `${Math.min(100, (f.details.trim().length / 600) * 100)}%` }} />
+                        <em>
+                          {f.details.trim().length < 20
+                            ? 'Just getting started'
+                            : f.details.trim().length < 200
+                              ? 'Good start, keep going'
+                              : f.details.trim().length < 600
+                                ? 'Plenty to work with'
+                                : 'Brilliant, that is loads'}
+                        </em>
+                      </div>
+                      {err('details')}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {step === 'photos' && (
+                <>
+                  <h1 className="display" tabIndex={-1} ref={heading}>
+                    Got any photos?
+                  </h1>
+                  <p className="sub">Your work, your premises, your logo, your team. Up to {MAX_PHOTOS}. No photos? Skip this, I can work without them.</p>
+                  <div className="body">
+                    <div
+                      className={`sf-drop${dragging ? ' over' : ''}`}
+                      onDragOver={(e) => {
+                        e.preventDefault()
+                        setDragging(true)
+                      }}
+                      onDragLeave={() => setDragging(false)}
+                      onDrop={(e) => {
+                        e.preventDefault()
+                        setDragging(false)
+                        void addFiles(e.dataTransfer.files)
+                      }}
+                    >
+                      <input
+                        ref={fileInput}
+                        id="sf-files"
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="sr"
+                        onChange={(e) => {
+                          if (e.target.files) void addFiles(e.target.files)
+                          e.target.value = ''
+                        }}
+                      />
+                      <button type="button" className="btn solid" onClick={() => fileInput.current?.click()} disabled={processing || photos.length >= MAX_PHOTOS}>
+                        {processing ? 'Preparing…' : photos.length ? 'Add more photos' : 'Choose photos'}
+                      </button>
+                      <p className="note">or drag them here · {photos.length}/{MAX_PHOTOS}</p>
+                    </div>
+                    <p className="note" aria-live="polite" style={{ marginTop: 10 }}>
+                      {photoMsg}
+                    </p>
+                    {photos.length > 0 && (
+                      <ul className="sf-photos">
+                        {photos.map((p) => (
+                          <li key={p.id}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={p.preview} alt={p.name} />
+                            <button type="button" aria-label={`Remove ${p.name}`} onClick={() => setPhotos((prev) => prev.filter((x) => x.id !== p.id))}>
+                              ×
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {step === 'links' && (
+                <>
+                  <h1 className="display" tabIndex={-1} ref={heading}>
+                    Where can I see you now?
+                  </h1>
+                  <p className="sub">Your current website, social pages and any portfolio. All optional, but it helps a lot.</p>
+                  <div className="body stack">
+                    {input('website', 'Existing website', { optional: true, type: 'url', ac: 'url', placeholder: 'yourbusiness.co.uk' })}
+                    <div className="field">
+                      <span className="sf-label">
+                        Social media pages <i>Optional</i>
+                      </span>
+                      {f.socials.map((s, i) => (
+                        <div key={i} className="sf-social">
+                          <label htmlFor={`sf-social-${i}`} className="sr">
+                            Social page {i + 1}
+                          </label>
+                          <input
+                            id={`sf-social-${i}`}
+                            type="text"
+                            value={s}
+                            placeholder={i === 0 ? '@yourbusiness or instagram.com/yourbusiness' : 'Another page'}
+                            onChange={(e) => {
+                              const v = [...f.socials]
+                              v[i] = e.target.value
+                              set('socials', v)
+                            }}
+                            aria-invalid={errs[`social-${i}`] ? true : undefined}
+                          />
+                          {f.socials.length > 1 && (
+                            <button type="button" className="sf-x" aria-label={`Remove social page ${i + 1}`} onClick={() => set('socials', f.socials.filter((_, j) => j !== i))}>
+                              ×
+                            </button>
+                          )}
+                          {err(`social-${i}`)}
+                        </div>
+                      ))}
+                      {f.socials.length < 6 && (
+                        <button type="button" className="link" onClick={() => set('socials', [...f.socials, ''])}>
+                          + Add another page
+                        </button>
+                      )}
+                    </div>
+                    {input('portfolio', 'Portfolio', { optional: true, type: 'url', placeholder: 'Behance, Google Drive, anything' })}
+                  </div>
+                </>
+              )}
+
+              {step === 'date' && (
+                <>
+                  <h1 className="display" tabIndex={-1} ref={heading}>
+                    When do you want your website?
+                  </h1>
+                  <p className="sub">
+                    {OFFER.timing.processing} {OFFER.timing.build}
+                  </p>
+                  <div className="body">
+                    <ul className="sf-legend" aria-label="Key">
+                      <li className="k-processing">Processing</li>
+                      <li className="k-building">Building</li>
+                      <li className="k-maybe">May move for big requests</li>
+                      <li className="k-open">Free to pick</li>
+                    </ul>
+                    {months.length > 0 && (
+                      <div className="sf-cal" id="sf-date" tabIndex={-1}>
+                        <div className="sf-cal-head">
+                          <button type="button" className="sf-cal-nav" onClick={() => setMonth((m) => Math.max(0, m - 1))} disabled={month === 0} aria-label="Previous month">
+                            ←
+                          </button>
+                          <b aria-live="polite">{months[month].label}</b>
+                          <button
+                            type="button"
+                            className="sf-cal-nav"
+                            onClick={() => setMonth((m) => Math.min(months.length - 1, m + 1))}
+                            disabled={month === months.length - 1}
+                            aria-label="Next month"
+                          >
+                            →
+                          </button>
+                        </div>
+                        <div className="sf-cal-grid" role="grid" aria-label={months[month].label}>
+                          {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
+                            <span key={d} className="sf-dow" role="columnheader">
+                              {d}
+                            </span>
+                          ))}
+                          {months[month].cells.map((iso, i) => {
+                            if (!iso) return <span key={`b${i}`} aria-hidden="true" />
+                            const k = dayKind(today, iso)
+                            const far = dayDiff(today, iso) > LAST_BOOKABLE_DAYS
+                            const pickable = (k === 'maybe' || k === 'open') && !far
+                            const day = Number(iso.slice(8))
+                            return (
+                              <button
+                                key={iso}
+                                type="button"
+                                className={`sf-day k-${k}${f.date === iso ? ' sel' : ''}`}
+                                disabled={!pickable}
+                                aria-pressed={pickable ? f.date === iso : undefined}
+                                aria-label={`${fmtDay(iso, { weekday: 'long', day: 'numeric', month: 'long' })}${KIND_LABEL[k] ? `, ${KIND_LABEL[k]}` : ''}`}
+                                onClick={() => set('date', iso)}
+                              >
+                                <span>{day}</span>
+                                {KIND_LABEL[k] && <small>{KIND_LABEL[k]}</small>}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    {err('date')}
+                    <p className="note" aria-live="polite" style={{ marginTop: 14 }}>
+                      {f.date
+                        ? dayKind(today, f.date) === 'maybe'
+                          ? `${fmtDay(f.date, { weekday: 'long', day: 'numeric', month: 'long' })}: possible, but a large request could take a day or two longer.`
+                          : `${fmtDay(f.date, { weekday: 'long', day: 'numeric', month: 'long' })}: plenty of time.`
+                        : 'Days 1 to 4 are taken up by processing and building. Pick any day after that.'}
+                    </p>
+                  </div>
+                </>
+              )}
+
+              {step === 'you' && (
+                <>
+                  <h1 className="display" tabIndex={-1} ref={heading}>
+                    Who am I building this for?
+                  </h1>
+                  <p className="sub">No calls. I reply by message or email.</p>
+                  <div className="body stack">
+                    <div className="grid2">
+                      {input('name', 'Your name', { ac: 'name' })}
+                      {input('email', 'Email', { type: 'email', ac: 'email' })}
+                    </div>
+                    <div className="cards" role="group" aria-label="How should I reply" id="sf-replyVia" tabIndex={-1}>
+                      {REPLY_OPTIONS.map((r) => (
+                        <button key={r.id} type="button" className="card" aria-pressed={f.replyVia === r.id} onClick={() => set('replyVia', r.id)}>
+                          <span className="t">{r.label}</span>
+                          <span className="d">{r.note}</span>
+                        </button>
+                      ))}
+                    </div>
+                    {err('replyVia')}
+                    {f.replyVia === 'whatsapp' && input('phone', 'Mobile number with WhatsApp', { type: 'tel', ac: 'tel', hint: 'Only used to message you.' })}
+                  </div>
+                </>
+              )}
+
+              {step === 'review' && (
+                <>
+                  <h1 className="display" tabIndex={-1} ref={heading}>
+                    Ready when you are.
+                  </h1>
+                  <p className="sub">Tap anything to change it. Nothing to pay, and no obligation.</p>
+                  <div className="body sf-review">
+                    {summary.map((s) => (
+                      <button key={s.id} type="button" className={`sf-review-row${s.done ? '' : ' empty'}`} onClick={() => goTo(s.id)}>
+                        <span className="label">{s.label}</span>
+                        <b>{s.value}</b>
+                        <i aria-hidden="true">Edit</i>
+                      </button>
+                    ))}
+                    {photos.length > 0 && (
+                      <button type="button" className="sf-review-photos" onClick={() => goTo('photos')} aria-label="Edit photos">
+                        {photos.map((p) => (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img key={p.id} src={p.preview} alt="" />
+                        ))}
+                      </button>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {formMsg && (
+                <div className="banner" role="alert" style={{ marginTop: 24 }}>
+                  {formMsg}{' '}
+                  <a href={messageHref()} target="_blank" rel="noopener noreferrer">
+                    Open WhatsApp
+                  </a>
+                </div>
+              )}
+            </div>
+          </form>
+
+          {!isOffer && (
+            <aside className={`sf-summary${summaryOpen ? ' open' : ''}`} aria-label="Your request so far">
+              <button type="button" className="sf-summary-toggle" aria-expanded={summaryOpen} onClick={() => setSummaryOpen((o) => !o)}>
+                Your request · {doneCount}/{summary.length}
+              </button>
+              <ul>
+                {summary.map((s) => (
+                  <li key={s.id}>
+                    <button type="button" className={`${s.id === step ? 'on' : ''}${s.done ? ' done' : ''}`} onClick={() => goTo(s.id)}>
+                      <span className="label">{s.label}</span>
+                      <b>{s.value}</b>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </aside>
+          )}
+        </div>
+      </div>
+
+      <div className="actions">
+        <div className="actions-in">
+          {!isOffer && (
+            <button className="back" type="button" onClick={back}>
+              Back
+            </button>
+          )}
+          <button className="btn solid grow" type="submit" form="sf-form" disabled={busy || processing}>
+            {isOffer ? 'Get my free website' : step === 'review' ? (busy ? 'Sending…' : 'Send my request') : step === 'photos' && !photos.length ? 'Skip for now' : 'Continue'}
+          </button>
+        </div>
+        {isOffer && <p className="fine">Free to build · No deposit · No calls</p>}
+      </div>
+    </>
+  )
+}

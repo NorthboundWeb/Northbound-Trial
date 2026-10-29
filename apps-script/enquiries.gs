@@ -46,7 +46,11 @@
  */
 
 var FIELDS = ['name', 'email', 'business', 'projectType', 'budget', 'message'];
-var MAX_LEN = { name: 120, email: 254, business: 160, projectType: 80, budget: 60, message: 5000 };
+var MAX_LEN = { name: 120, email: 254, business: 160, projectType: 120, budget: 60, message: 8000 };
+/** Photos sent with a free-build request: at most this many, each at most this many bytes. */
+var MAX_PHOTOS = 6;
+var MAX_PHOTO_BYTES = 1500000;
+var PHOTO_FOLDER = 'Northbound enquiry photos';
 var SHEET_TAB = 'Enquiries';
 var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -91,6 +95,18 @@ function doPost(e) {
     var logged = false;
     var emailed = false;
 
+    // Photos (optional): saved to Drive in a folder per request and attached to the email.
+    var photos = [];
+    var photoLink = '';
+    try {
+      var saved = savePhotos_(data.photos, ref || String(receivedAt.getTime()));
+      photos = saved.blobs;
+      photoLink = saved.url;
+    } catch (photoError) {
+      console.error('Photos not saved: ' + photoError);
+    }
+    if (photoLink) enquiry.message += '\n\nPhotos: ' + photoLink;
+
     try {
       logged = logToSheet_(props.getProperty('SHEET_ID'), receivedAt, enquiry, ref);
     } catch (sheetError) {
@@ -98,7 +114,7 @@ function doPost(e) {
     }
 
     try {
-      emailed = sendEmail_(props.getProperty('NOTIFY_TO'), receivedAt, enquiry);
+      emailed = sendEmail_(props.getProperty('NOTIFY_TO'), receivedAt, enquiry, photos);
     } catch (mailError) {
       console.error('Email failed: ' + mailError);
     }
@@ -136,7 +152,42 @@ function testEnquiry() {
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
-function sendEmail_(notifyTo, receivedAt, enquiry) {
+/**
+ * Accepts [{ name, type, data }] where data is base64 JPEG/PNG/WebP. Anything
+ * else, oversized or beyond MAX_PHOTOS is skipped. Returns the blobs (for the
+ * email) and a link to the Drive folder they were saved in.
+ */
+function savePhotos_(list, ref) {
+  var out = { blobs: [], url: '' };
+  if (!list || !list.length) return out;
+  var allowed = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+  var blobs = [];
+  for (var i = 0; i < list.length && blobs.length < MAX_PHOTOS; i++) {
+    var p = list[i] || {};
+    var type = String(p.type || '');
+    if (!allowed[type]) continue;
+    var bytes;
+    try {
+      bytes = Utilities.base64Decode(String(p.data || ''));
+    } catch (decodeError) {
+      continue;
+    }
+    if (!bytes.length || bytes.length > MAX_PHOTO_BYTES) continue;
+    var name = 'photo-' + (blobs.length + 1) + '.' + allowed[type];
+    blobs.push(Utilities.newBlob(bytes, type, name));
+  }
+  if (!blobs.length) return out;
+  var parents = DriveApp.getFoldersByName(PHOTO_FOLDER);
+  var root = parents.hasNext() ? parents.next() : DriveApp.createFolder(PHOTO_FOLDER);
+  var folder = root.createFolder(oneLine_(ref).slice(0, 60));
+  blobs.forEach(function (b) { folder.createFile(b); });
+  out.blobs = blobs;
+  out.url = folder.getUrl();
+  return out;
+}
+
+
+function sendEmail_(notifyTo, receivedAt, enquiry, photos) {
   var to = notifyTo || Session.getEffectiveUser().getEmail();
   var subject = 'New enquiry: ' + enquiry.name + (enquiry.business ? ' (' + enquiry.business + ')' : '');
   var rows = [
@@ -168,6 +219,7 @@ function sendEmail_(notifyTo, receivedAt, enquiry) {
     body: text,
     htmlBody: html,
     name: 'Northbound enquiries',
+    attachments: photos && photos.length ? photos : undefined,
   });
   return true;
 }

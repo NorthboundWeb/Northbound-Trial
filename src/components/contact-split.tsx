@@ -74,7 +74,7 @@ export function ContactSplit() {
         </div>
       </div>
       <Link href="/start" className="split-start">
-        <span className="split-k">or tell me about it</span>
+        <span className="split-k">or get it built free, no deposit</span>
         <span className="split-big">
           Start a project <span aria-hidden="true">→</span>
         </span>
