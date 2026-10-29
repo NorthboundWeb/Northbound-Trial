@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useRef } from 'react'
 import { demos } from '@/lib/showcase'
 import { DemoSite } from './demo-site'
+import { demoComponents } from './demos/registry'
 import { THEME_EVENT } from './theme-toggle'
 
 /**
@@ -212,7 +213,10 @@ export function SiteWall() {
                     style={{ left: i * PITCH, width: CARD_W, height: CARD_H }}
                   >
                     <div className="wall-shot" style={{ transform: `scale(${SCALE})` }}>
-                      <DemoSite d={d} />
+                      {(() => {
+                        const Shot = demoComponents[d.slug]?.Shot
+                        return Shot ? <Shot /> : <DemoSite d={d} />
+                      })()}
                     </div>
                   </Link>
                 )

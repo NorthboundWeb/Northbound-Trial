@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { DemoSite } from '@/components/demo-site'
+import { demoComponents } from '@/components/demos/registry'
 import { demoBySlug, demos } from '@/lib/showcase'
 
 export function generateStaticParams() {
@@ -37,7 +38,10 @@ export default async function DemoPage({ params }: Props) {
         </Link>
       </div>
       <main id="main">
-        <DemoSite d={d} full />
+        {(() => {
+          const Real = demoComponents[d.slug]?.Site
+          return Real ? <Real /> : <DemoSite d={d} full />
+        })()}
       </main>
       <aside className="demo-pitch" aria-label="About this demo">
         <div>
