@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter, Inter_Tight, JetBrains_Mono } from 'next/font/google'
 import { Curtain } from '@/components/curtain'
 import { DotCursor } from '@/components/dot-cursor'
@@ -16,6 +16,14 @@ export const metadata: Metadata = {
   description: 'Fast, honest websites for UK small businesses, priced up front. Preview build.',
   // A preview, not the live site: keep it out of search results.
   robots: { index: false, follow: false },
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  colorScheme: 'dark light',
+  themeColor: '#06080d',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

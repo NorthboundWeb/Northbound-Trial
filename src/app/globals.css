@@ -821,3 +821,54 @@ html[data-theme="dark"] { --ok: #3ddc97; --ok-wash: rgba(61, 220, 151, .14); }
 .sf-offer-card, .sf-time, .sf-cal, .sf-review-row, .card, .pill, .sf-resume, .sf-drop { background-clip: padding-box; }
 .sf-offer-card, .sf-time, .sf-review-row { overflow: hidden; }
 .sf-acc-head:focus-visible { outline: 2px solid var(--accent); }
+
+/* ===== Mobile pass ===== */
+html { -webkit-text-size-adjust: 100%; overflow-x: clip; }
+* { -webkit-tap-highlight-color: transparent; }
+a, button, input, textarea, select, label, summary { touch-action: manipulation; }
+body { overscroll-behavior-y: none; }
+.loop { min-height: 100vh; min-height: 100svh; }
+.demo.full .d-hero { min-height: 70vh; min-height: 70svh; }
+.sf-cal { max-height: min(520px, 62vh); max-height: min(520px, 62svh); }
+/* iOS zooms the page when a field under 16px is focused */
+@media (max-width: 900px) { input, textarea, select, .split-form input { font-size: 16px; } }
+/* taps, not hovers, on touch screens: no sticky lifted cards */
+@media (hover: none) {
+  .sf-offer-card:hover, .split-jump:hover, .split-idea:hover, .btn:hover, .pill:hover, .card:hover { transform: none; }
+  .split-start .split-spot, .split-text .split-spot { display: none; }
+}
+@media (max-width: 760px) {
+  .top-in { height: 64px; }
+  .sf-rail { top: 65px; margin-inline: calc(-1 * max(20px, env(safe-area-inset-left, 0px))); padding-inline: max(20px, env(safe-area-inset-left, 0px)); }
+  .sf-rail-btn { min-height: 44px; }
+  .sf-grid { padding-top: 28px; gap: 28px; }
+  .sf-hero { font-size: clamp(32px, 10vw, 44px); }
+  .sf-offer { grid-template-columns: 1fr; }
+  .sf-offer-card { padding-bottom: 44px; }
+  .sf-review-row { grid-template-columns: 76px minmax(0, 1fr) auto; gap: 10px; padding: 12px 14px; }
+  .sf-acc-head { padding: 14px 14px; }
+  .sf-acc-in { padding: 2px 14px 16px; }
+  .sf-drop { padding: 32px 16px; }
+  .sf-photos { grid-template-columns: repeat(3, 1fr); }
+  .actions { padding-top: 20px; }
+  .actions-in .back { padding-inline: 4px; }
+  .ticker a { min-height: 44px; display: inline-flex; align-items: center; }
+  .process-tabs { margin-inline: -20px; padding-inline: 20px; scroll-padding-inline: 20px; }
+  .process-tabs button { min-height: 44px; }
+  .split-text { justify-content: flex-start; padding-block: 36px; }
+  .split-start { padding-block: 36px; }
+  .split-go { font-size: 34px; }
+  .split-big { font-size: clamp(34px, 11vw, 48px); }
+  .split-bubble p { max-width: 100%; }
+  .band { padding-block: 52px; }
+  .hero-h { font-size: clamp(40px, 12.5vw, 64px); }
+  /* the Message me pill becomes a corner button so it never covers text */
+  .message-pill { left: auto; right: max(16px, env(safe-area-inset-right, 0px)); transform: none; font-size: 0; gap: 0; padding: 6px; min-height: 56px; }
+  .message-pill span { width: 44px; height: 44px; }
+  main, .loop { scroll-padding-bottom: 90px; }
+  .foot-base { padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
+}
+@media (max-width: 380px) {
+  .sf-review-row { grid-template-columns: 1fr auto; }
+  .sf-review-row .label { grid-column: 1 / -1; }
+}
