@@ -47,7 +47,9 @@ site; keep the two in step. Swiping right on a touch screen goes back a page (`s
   a dot-field morph on a canvas) and `service-ticker.tsx`. Demo sites are in
   `src/lib/showcase.ts`, drawn by `demo-site.tsx`, full pages at
   `/demos/[slug]`; all made-up businesses, always labelled.
-- `theme-toggle.tsx` (light/dark, circle reveal), `dot-cursor.tsx` (mouse only).
+- `theme-toggle.tsx` (light/dark, circle reveal; dark is the default until
+  someone picks light), `dot-cursor.tsx` (mouse only), `aurora.tsx` (the
+  pointer-reactive canvas background behind the home "Message me" panel).
 
 ## Copy rules (same as the live site)
 

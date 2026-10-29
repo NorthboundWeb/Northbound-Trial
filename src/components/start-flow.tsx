@@ -125,7 +125,17 @@ export function StartFlow() {
   const ready = useRef(false)
 
   useEffect(() => {
-    if (window.location.search.includes('step=')) window.history.replaceState(null, '', window.location.pathname)
+    const q = new URLSearchParams(window.location.search)
+    const jump = q.get('build')
+    if (jump && BUILD_GROUPS.some((g) => g.id === jump)) {
+      // Arrived from a chip on the home page: open straight onto that heading.
+      window.history.replaceState(null, '', window.location.pathname)
+      window.history.pushState(null, '', '?step=build')
+      setTimeout(() => {
+        setStep('build')
+        setOpenGroup(jump)
+      }, 0)
+    } else if (q.has('step')) window.history.replaceState(null, '', window.location.pathname)
     const t0 = setTimeout(() => {
       const d = loadDraft()
       if (d && (d.f.build?.length || d.f.details?.trim() || d.f.name?.trim() || d.photoCount)) setDraft(d)
