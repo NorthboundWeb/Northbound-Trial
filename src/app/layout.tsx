@@ -36,7 +36,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <span>Web.co</span>
             </Link>
             <nav className="nav" aria-label="Main">
-              <Link href="/">Book a call</Link>
+              <Link href="/" aria-current="page">
+                Book a call
+              </Link>
             </nav>
           </header>
           <main id="main">{children}</main>
