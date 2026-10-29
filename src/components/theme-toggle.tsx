@@ -28,7 +28,7 @@ function apply(t: Theme) {
 }
 
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>('light')
+  const [theme, setTheme] = useState<Theme>('dark')
 
   useEffect(() => {
     const t = setTimeout(() => setTheme(current()), 0)
