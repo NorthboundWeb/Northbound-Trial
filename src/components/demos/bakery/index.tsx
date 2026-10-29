@@ -184,7 +184,7 @@ function Hero({ status }: { status: Status | null }): JSX.Element {
   return (
     <section id="sb-top" className={styles.hero} aria-labelledby="sb-h1" tabIndex={-1}>
       <div className={styles.heroText}>
-        <p className={styles.live} aria-live="polite">
+        <p className={styles.live}>
           <span className={cx(styles.dot, status?.open && styles.dotOpen)} aria-hidden="true" />
           {status ? (
             <span>
@@ -698,7 +698,7 @@ function Visit({ clock, status }: { clock: Clock | null; status: Status | null }
         <h2 id="sb-visit-h" className={styles.h2}>
           Find the <em>yard</em>
         </h2>
-        <div className={cx(styles.statusCard, status?.open && styles.statusOpen)} aria-live="polite">
+        <div className={cx(styles.statusCard, status?.open && styles.statusOpen)}>
           <span className={cx(styles.dot, status?.open && styles.dotOpen)} aria-hidden="true" />
           {status ? (
             <p>

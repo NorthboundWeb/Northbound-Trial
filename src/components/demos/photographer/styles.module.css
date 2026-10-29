@@ -1831,6 +1831,12 @@ div.addon {
   }
 }
 
+@container (max-width: 400px) {
+  .brand .mark {
+    display: none;
+  }
+}
+
 /* ---------------------------------------------------------------- shot */
 
 .shot {

@@ -62,7 +62,9 @@ export function HeroLoaf({ lean = false }: { lean?: boolean }): JSX.Element {
         </defs>
       )}
       <circle cx="240" cy="232" r="206" fill="#e8d4a6" />
-      <circle cx="240" cy="232" r="222" fill="none" stroke={INK} strokeOpacity="0.35" strokeDasharray="1 7" strokeLinecap="round" strokeWidth="2" />
+      {!lean && (
+        <circle cx="240" cy="232" r="222" fill="none" stroke={INK} strokeOpacity="0.35" strokeDasharray="1 7" strokeLinecap="round" strokeWidth="2" />
+      )}
       {!lean && (
         <g className={styles.stalks}>
           <Stalk x={150} y={300} r={-18} />
@@ -72,8 +74,12 @@ export function HeroLoaf({ lean = false }: { lean?: boolean }): JSX.Element {
       )}
       <path d="M58 352h318a15 15 0 0 1 0 30H58a15 15 0 0 1 0-30z" fill="#9a6535" />
       <rect x="376" y="359" width="74" height="16" rx="8" fill="#9a6535" />
-      <circle cx="436" cy="367" r="4" fill="#e8d4a6" />
-      <path d="M70 360h290" stroke="#7a4c25" strokeOpacity="0.5" strokeWidth="1.5" />
+      {!lean && (
+        <>
+          <circle cx="436" cy="367" r="4" fill="#e8d4a6" />
+          <path d="M70 360h290" stroke="#7a4c25" strokeOpacity="0.5" strokeWidth="1.5" />
+        </>
+      )}
       <path
         d="M92 330C84 236 152 166 240 166s156 70 148 164c-8 22-68 28-148 28s-140-6-148-28z"
         fill={lean ? CRUST : 'url(#sb-crust)'}

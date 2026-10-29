@@ -1641,6 +1641,12 @@
   }
 }
 
+.lineName,
+.storyHead,
+.visitText {
+  min-width: 0;
+}
+
 /* ---------------------------------------------------------------- shot (home-page wall) */
 
 .shot {

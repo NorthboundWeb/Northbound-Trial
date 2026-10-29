@@ -330,7 +330,7 @@ export function Bouquet({
   const k = KINDS_FOR[kind]
   const { heads, fills } = buildBouquet(
     seed,
-    lean ? 5 : big ? 13 : kind === 'dried' ? 6 : 9,
+    lean ? 4 : big ? 13 : kind === 'dried' ? 6 : 9,
     k.heads,
     k.fills,
     lean ? 0 : big ? 9 : kind === 'dried' ? 12 : 7,

@@ -2149,6 +2149,10 @@
     padding-left: 18px;
   }
 
+  .heroSmall {
+    right: -3%;
+  }
+
   .cutBadge {
     width: 120px;
     height: 120px;
@@ -2191,6 +2195,13 @@
   .drawerTitle {
     font-size: 30px;
   }
+}
+
+.lineInfo,
+.shop,
+.studioCopy,
+.wedCopy {
+  min-width: 0;
 }
 
 /* ---------------------------------------------------------------- shot */
