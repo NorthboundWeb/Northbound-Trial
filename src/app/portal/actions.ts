@@ -56,6 +56,36 @@ export async function confirmLink(form: FormData) {
   redirect(isAdmin(email) ? '/portal/admin' : '/portal')
 }
 
+/**
+ * Google sign-in. The browser hands over a signed Google ID token; Google
+ * itself checks it, and it must be for this site's client ID with a verified
+ * email. Only emails that have a project (or are admins) get in.
+ */
+export async function googleSignIn(credential: string): Promise<{ ok: boolean; message?: string; to?: string }> {
+  const clientId = process.env.GOOGLE_CLIENT_ID ?? ''
+  if (!clientId || !sessionsReady() || !scriptReady()) return { ok: false, message: 'Google sign-in is not set up yet. Use the email link instead.' }
+  if (await limited('google', 10, 15 * 60 * 1000)) return { ok: false, message: 'Too many tries. Please wait a few minutes.' }
+  if (typeof credential !== 'string' || credential.length < 100 || credential.length > 4000) return { ok: false, message: 'That Google sign-in did not work. Please try again.' }
+  try {
+    const res = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`, { cache: 'no-store' })
+    if (!res.ok) return { ok: false, message: 'That Google sign-in did not work. Please try again.' }
+    const t = (await res.json()) as { aud?: string; email?: string; email_verified?: string | boolean; iss?: string; exp?: string }
+    const issuerOk = t.iss === 'https://accounts.google.com' || t.iss === 'accounts.google.com'
+    const verified = t.email_verified === true || t.email_verified === 'true'
+    const email = String(t.email ?? '').trim().toLowerCase()
+    if (t.aud !== clientId || !issuerOk || !verified || !EMAIL_RE.test(email) || Number(t.exp) * 1000 < Date.now()) {
+      return { ok: false, message: 'That Google sign-in did not work. Please try again.' }
+    }
+    const known = isAdmin(email) || (await callScript('has_projects', { email })).has === true
+    if (!known) return { ok: false, message: `${email} does not have a project with me yet. Try the email you used when you asked for your website, or message me on WhatsApp.` }
+    await startSession(email)
+    return { ok: true, to: isAdmin(email) ? '/portal/admin' : '/portal' }
+  } catch (error) {
+    console.error('Google sign-in failed:', error)
+    return { ok: false, message: 'That did not go through. Please try again, or use the email link.' }
+  }
+}
+
 export async function signOut() {
   await endSession()
   redirect('/portal')

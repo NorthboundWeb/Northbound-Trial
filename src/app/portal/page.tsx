@@ -26,13 +26,13 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
             Your website,
             <span>as it happens.</span>
           </h1>
-          <p className="section-sub">Enter the email you used with me and I will send you a one-tap sign-in link. No password to remember.</p>
+          <p className="section-sub">Sign in with Google, or enter the email you used with me and I will send you a one-tap link. No password to remember.</p>
           {link === 'bad' && (
             <div className="banner" role="alert" style={{ marginTop: 24 }}>
               That sign-in link has expired or was already used. Ask for a fresh one below.
             </div>
           )}
-          <SignInForm />
+          <SignInForm googleClientId={process.env.GOOGLE_CLIENT_ID || undefined} />
           <p className="note" style={{ marginTop: 28 }}>
             Not a client yet? <Link href="/start">Get your first website built free</Link>.
           </p>

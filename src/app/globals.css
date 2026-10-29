@@ -1024,3 +1024,10 @@ html[data-theme="dark"] .ww-floor { background: radial-gradient(ellipse at cente
 .menu-contact > div, .menu-contact { column-gap: 22px; }
 .menu-contact a { margin: 0; }
 .menu-contact-links { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px 26px; }
+
+/* Google sign-in on the client login */
+.pt-google { margin-top: 32px; max-width: 520px; display: flex; flex-direction: column; gap: 12px; }
+.pt-google-btn { min-height: 44px; display: flex; }
+.pt-or { display: flex; align-items: center; gap: 14px; color: var(--muted); font-size: 13px; margin: 8px 0 0; }
+.pt-or::before, .pt-or::after { content: ''; flex: 1; height: 1px; background: var(--line2); }
+.pt-google + .pt-form { margin-top: 16px; }
