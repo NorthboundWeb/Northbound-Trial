@@ -775,3 +775,8 @@ html[data-theme="dark"] .k-maybe { --k: #f08a66; --k-bg: rgba(226, 101, 63, .14)
 .sf-acc-panel:not([hidden]) { animation: nb-step .3s var(--ease) both; }
 .sf-acc-in { display: flex; flex-wrap: wrap; gap: 8px; padding: 2px 18px 18px; }
 @media (prefers-reduced-motion: reduce) { .sf-acc-panel:not([hidden]) { animation: none; } }
+.sf-resume { margin-bottom: 28px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; padding: 16px 18px; border-radius: 16px; background: var(--wash); box-shadow: inset 0 0 0 1px var(--accent); }
+.sf-resume > div:first-child { display: flex; flex-direction: column; gap: 2px; }
+.sf-resume b { font-family: var(--display); font-weight: 600; font-size: 17px; }
+.sf-resume span { font-size: 13px; color: var(--muted); }
+.sf-resume-btns { display: flex; gap: 8px; }

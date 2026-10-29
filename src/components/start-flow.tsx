@@ -26,6 +26,7 @@ import {
   type StartForm,
   type StepId,
 } from '@/lib/start/options'
+import { clearDraft, loadDraft, loadPhotos, saveDraft, savePhotos, type Draft } from '@/lib/start/draft'
 import { goWithCurtain } from './curtain'
 import { SWIPE_BACK_EVENT } from './swipe-back'
 import { TopBar } from './top-bar'
@@ -114,18 +115,45 @@ export function StartFlow() {
   const [month, setMonth] = useState(0)
   const [openGroup, setOpenGroup] = useState('')
   const [summaryOpen, setSummaryOpen] = useState(false)
+  const [draft, setDraft] = useState<Draft | null>(null)
+  const [saved, setSaved] = useState(false)
 
   const heading = useRef<HTMLHeadingElement>(null)
   const fileInput = useRef<HTMLInputElement>(null)
   const detailsBox = useRef<HTMLTextAreaElement>(null)
   const firstRender = useRef(true)
   const sentRef = useRef(sent)
+  const ready = useRef(false)
 
   useEffect(() => {
     if (window.location.search.includes('step=')) window.history.replaceState(null, '', window.location.pathname)
+    const t0 = setTimeout(() => {
+      const d = loadDraft()
+      if (d && (d.f.build?.length || d.f.details?.trim() || d.f.name?.trim() || d.photoCount)) setDraft(d)
+      ready.current = true
+    }, 0)
     const t = setTimeout(() => setToday(new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())), 0)
-    return () => clearTimeout(t)
+    return () => {
+      clearTimeout(t)
+      clearTimeout(t0)
+    }
   }, [])
+
+  useEffect(() => {
+    if (!ready.current || sent || draft) return
+    const t = setTimeout(() => {
+      const blank = !f.build.length && !f.details.trim() && !f.name.trim() && !f.business.trim() && !f.website.trim() && !photos.length
+      if (blank) return
+      saveDraft(f, step, photos.length)
+      setSaved(true)
+    }, 500)
+    return () => clearTimeout(t)
+  }, [f, step, photos.length, sent, draft])
+
+  useEffect(() => {
+    if (!ready.current || sent || draft) return
+    void savePhotos(photos)
+  }, [photos, sent, draft])
 
   useEffect(() => {
     sentRef.current = sent
@@ -178,8 +206,26 @@ export function StartFlow() {
     })
   }
 
+  async function resume() {
+    if (!draft) return
+    const d = draft
+    setF({ ...emptyStart(), ...d.f, socials: d.f.socials?.length ? d.f.socials : [''] })
+    if (d.photoCount) setPhotos(await loadPhotos())
+    setDraft(null)
+    const to = d.step === 'offer' ? 'build' : d.step
+    window.history.pushState(null, '', `?step=${to}`)
+    setStep(to)
+  }
+
+  function discardDraft() {
+    void clearDraft()
+    setDraft(null)
+    setSaved(false)
+  }
+
   function goTo(id: StepId) {
     if (id === step) return
+    if (draft) discardDraft()
     setErrs({})
     setSummaryOpen(false)
     window.history.pushState(null, '', id === 'offer' ? window.location.pathname : `?step=${id}`)
@@ -256,6 +302,7 @@ export function StartFlow() {
       return new File([bytes], `${p.name.replace(/\.[^.]+$/, '') || 'photo'}.jpg`, { type: 'image/jpeg' })
     })
     window.open(href, '_blank', 'noopener,noreferrer')
+    void clearDraft()
     setSent({ ref, name: f.name, replyVia: f.replyVia, date: f.date, href, files })
   }
 
@@ -443,6 +490,22 @@ export function StartFlow() {
             <div className="step-in" key={step}>
               {isOffer && (
                 <>
+                  {draft && (
+                    <div className="sf-resume" role="region" aria-label="Saved request">
+                      <div>
+                        <b>Welcome back{draft.f.name?.trim() ? `, ${draft.f.name.trim().split(/\s+/)[0]}` : ''}.</b>
+                        <span>I kept what you had filled in on this device.</span>
+                      </div>
+                      <div className="sf-resume-btns">
+                        <button type="button" className="btn solid small" onClick={() => void resume()}>
+                          Carry on
+                        </button>
+                        <button type="button" className="btn small" onClick={discardDraft}>
+                          Start again
+                        </button>
+                      </div>
+                    </div>
+                  )}
                   <p className="label sf-kick">No deposit · No obligation</p>
                   <h1 className="display sf-hero" tabIndex={-1} ref={heading}>
                     {OFFER.headline}
@@ -848,6 +911,7 @@ export function StartFlow() {
             {isOffer ? 'Get my free website' : step === 'review' ? 'Send on WhatsApp' : step === 'photos' && !photos.length ? 'Skip for now' : 'Continue'}
           </button>
         </div>
+        {!isOffer && saved && <p className="fine">Saved on this device. You can close this and come back.</p>}
         {isOffer && <p className="fine">First website free · No deposit · No calls</p>}
       </div>
     </>
