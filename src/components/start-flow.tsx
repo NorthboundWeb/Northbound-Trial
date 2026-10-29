@@ -53,7 +53,7 @@ const KIND_LABEL: Record<DayKind, string> = {
   past: '',
   processing: 'Processing',
   building: 'Building',
-  maybe: 'May move',
+  maybe: 'May change',
   open: '',
 }
 
@@ -662,7 +662,7 @@ export function StartFlow() {
                     <ul className="sf-legend" aria-label="Key">
                       <li className="k-processing">Processing</li>
                       <li className="k-building">Building</li>
-                      <li className="k-maybe">May move for big requests</li>
+                      <li className="k-maybe">Date may change for big requests</li>
                       <li className="k-open">Free to pick</li>
                     </ul>
                     {months.length > 0 && (

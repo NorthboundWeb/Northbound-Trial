@@ -664,7 +664,7 @@ html[data-theme="dark"] .card[aria-pressed="true"] { background: var(--wash); }
 /* day colours, shared by the strip, legend, calendar and timeline */
 .k-processing { --k: #f2b134; --k-bg: #fff6e3; --k-ink: #7a5200; }
 .k-building { --k: var(--accent); --k-bg: var(--wash); --k-ink: var(--accent-deep); }
-.k-maybe { --k: #c4cad6; --k-bg: repeating-linear-gradient(135deg, #f3f4f7 0 6px, #e9ecf1 6px 12px); --k-ink: var(--muted); }
+.k-maybe { --k: #e2653f; --k-bg: #fff1eb; --k-ink: #b5431f; }
 .k-open { --k: var(--ok); --k-bg: var(--ok-wash); --k-ink: var(--ok); }
 .sf-time-bar span { background: var(--k-bg); color: var(--k-ink); box-shadow: inset 0 0 0 1px var(--k); }
 
@@ -710,7 +710,10 @@ html[data-theme="dark"] .card[aria-pressed="true"] { background: var(--wash); }
 .sf-day.k-processing, .sf-day.k-building, .sf-day.k-maybe { background: var(--k-bg); color: var(--k-ink); box-shadow: inset 0 0 0 1px var(--k); }
 .sf-day.k-processing:disabled, .sf-day.k-building:disabled { cursor: not-allowed; }
 .sf-day.k-open:not(:disabled):hover { background: var(--ok-wash); box-shadow: inset 0 0 0 1px var(--ok); }
-.sf-day.k-maybe:not(:disabled):hover { box-shadow: inset 0 0 0 1.5px var(--ink); }
+.sf-day.k-maybe { box-shadow: none; outline: 1.5px dashed var(--k); outline-offset: -1.5px; }
+.sf-day.k-maybe:not(:disabled):hover { background: var(--k); color: #fff; }
+.sf-day.k-maybe.sel { outline: 0; }
+.sf-time-bar span.k-maybe, .sf-legend li.k-maybe::before { box-shadow: none; outline: 1.5px dashed var(--k); outline-offset: -1.5px; }
 .sf-day.k-open:disabled { color: var(--line2); }
 .sf-day:active:not(:disabled) { transform: scale(.94); }
 .sf-day.sel { background: var(--ink); color: var(--bg); box-shadow: none; }
@@ -749,6 +752,6 @@ html[data-theme="dark"] .card[aria-pressed="true"] { background: var(--wash); }
 .sf-timeline span { font-size: 13px; color: var(--muted); }
 
 html[data-theme="dark"] .k-processing { --k: #c8901f; --k-bg: rgba(242, 177, 52, .14); --k-ink: #f6c76a; }
-html[data-theme="dark"] .k-maybe { --k-bg: repeating-linear-gradient(135deg, rgba(255,255,255,.05) 0 6px, rgba(255,255,255,.09) 6px 12px); --k: rgba(255,255,255,.22); }
+html[data-theme="dark"] .k-maybe { --k: #f08a66; --k-bg: rgba(226, 101, 63, .14); --k-ink: #ffab8c; }
 @media (prefers-reduced-motion: reduce) { .sf-offer-card, .sf-offer-card i, .sf-photos li { transition: none; animation: none; } }
 .sf-sendbox { margin-top: 28px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
