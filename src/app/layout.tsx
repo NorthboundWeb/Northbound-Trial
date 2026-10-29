@@ -5,6 +5,7 @@ import { DotCursor } from '@/components/dot-cursor'
 import { Intro } from '@/components/intro'
 import { SwipeBack } from '@/components/swipe-back'
 import { bootScript } from '@/lib/boot-scripts'
+import { site } from '@/lib/site'
 import './globals.css'
 
 const sans = Inter({ subsets: ['latin'], variable: '--nb-sans', display: 'swap' })
@@ -12,10 +13,12 @@ const display = Inter_Tight({ subsets: ['latin'], weight: ['500', '600', '700'],
 const mono = JetBrains_Mono({ subsets: ['latin'], weight: ['400', '500'], variable: '--nb-mono', display: 'swap' })
 
 export const metadata: Metadata = {
-  title: { default: 'Northbound Web — websites for UK small businesses', template: '%s — Northbound Web' },
-  description: 'Fast, honest websites for UK small businesses, priced up front. Preview build.',
-  // A preview, not the live site: keep it out of search results.
-  robots: { index: false, follow: false },
+  metadataBase: new URL(site.url),
+  title: { default: `${site.name} — ${site.tagline}`, template: `%s — ${site.name}` },
+  description: site.description,
+  openGraph: { type: 'website', locale: 'en_GB', url: site.url, siteName: site.name, title: `${site.name} — ${site.tagline}`, description: site.description },
+  twitter: { card: 'summary_large_image', title: `${site.name} — ${site.tagline}`, description: site.description },
+  robots: { index: true, follow: true, googleBot: { index: true, follow: true, 'max-image-preview': 'large' } },
 }
 
 export const viewport: Viewport = {
@@ -28,7 +31,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-GB" className={`${sans.variable} ${display.variable} ${mono.variable}`} suppressHydrationWarning>
+    <html lang="en-GB" data-theme="dark" className={`${sans.variable} ${display.variable} ${mono.variable}`} suppressHydrationWarning>
       <body>
         <script dangerouslySetInnerHTML={{ __html: bootScript }} />
         <Intro />

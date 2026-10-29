@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { CONTACT_EMAIL } from '@/lib/booking/options'
 import { messageHref, messageLabel } from '@/lib/contact'
 import { PAGES, SOCIALS } from '@/lib/nav'
 
@@ -31,7 +30,10 @@ export function SiteFooter() {
               </a>
             </li>
             <li>
-              <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
+              <Link href="/email">Email me</Link>
+            </li>
+            <li>
+              <Link href="/portal">Client login</Link>
             </li>
             {SOCIALS.map((s) => (
               <li key={s.href}>
@@ -45,7 +47,7 @@ export function SiteFooter() {
       </div>
       <div className="wrap foot-base">
         <span>© Northbound Web · United Kingdom</span>
-        <span>Preview build</span>
+        <span>First website free</span>
       </div>
     </footer>
   )

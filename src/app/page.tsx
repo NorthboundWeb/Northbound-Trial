@@ -58,7 +58,7 @@ const FAQS = [
   },
   {
     q: 'How long does it take?',
-    a: 'Pro is approximately 7–10 working days and Ultimate approximately 10–15, counted from the go-ahead and the arrival of your content. They are estimates, not guarantees: slow content or feedback moves the date.',
+    a: 'Up to 24 hours to process your request, then an estimated 72 hours to build. Larger requests, custom builds and systems take longer, and I tell you the date before I start. These are estimates, not guarantees: slow content or feedback moves the date.',
   },
   {
     q: 'Do I own the website?',

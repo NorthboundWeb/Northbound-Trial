@@ -5,8 +5,8 @@ import { useEffect, useState } from 'react'
 /**
  * Light / dark switch in the header pill. The new theme spreads out from the
  * button in a growing circle (View Transitions where the browser has them,
- * an instant swap where it does not). The choice is remembered on this
- * device only.
+ * an instant swap where it does not). The choice lasts for this visit only;
+ * every new visit opens in dark.
  */
 
 import { THEME_KEY as KEY } from '@/lib/boot-scripts'
@@ -20,9 +20,9 @@ const current = (): Theme => (document.documentElement.dataset.theme === 'dark' 
 function apply(t: Theme) {
   document.documentElement.dataset.theme = t
   try {
-    localStorage.setItem(KEY, t)
+    sessionStorage.setItem(KEY, t)
   } catch {
-    // Storage blocked: the theme just resets next visit.
+    // Storage blocked: the theme just resets on the next page load.
   }
   window.dispatchEvent(new CustomEvent(THEME_EVENT, { detail: t }))
 }

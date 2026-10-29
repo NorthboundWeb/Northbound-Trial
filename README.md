@@ -1,14 +1,13 @@
-# Northbound Trial
+# Northbound Web
 
-Preview of the Northbound Web booking flow: a five-step "Book a call" form
-with live slot availability, saved requests visitors can check or cancel, and
-an owner diary at `/diary`.
+The marketing site for Northbound Web (northboundweb.co.uk): Next.js 16 App
+Router, Tailwind CSS v4, TypeScript. Every route is static, with no database,
+no accounts and no server write path. A project request opens a WhatsApp chat.
 
-Not the live site. See `AGENTS.md` for how it works and `.env.example` for
-configuration. Database setup is in `supabase/booking.sql`.
+See `AGENTS.md` for how it works and the copy rules.
 
 ```bash
 npm install
-cp .env.example .env.local   # fill in the values
 npm run dev
+npm run typecheck && npm run lint && npm run build
 ```

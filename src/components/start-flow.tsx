@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { CONTACT_EMAIL } from '@/lib/booking/options'
 import { whatsappHref } from '@/lib/contact'
 import {
   BUILD_GROUPS,
@@ -28,6 +27,7 @@ import {
 } from '@/lib/start/options'
 import { clearDraft, loadDraft, loadPhotos, saveDraft, savePhotos, type Draft } from '@/lib/start/draft'
 import { goWithCurtain } from './curtain'
+import { EmailFallback } from './email-fallback'
 import { SWIPE_BACK_EVENT } from './swipe-back'
 import { TopBar } from './top-bar'
 
@@ -445,9 +445,9 @@ export function StartFlow() {
             </li>
           </ol>
           <p className="note" style={{ marginTop: 24 }}>
-            If you love it, you buy it. If you do not, that is the end of it: I will not contact you again. No WhatsApp? Email the same details to{' '}
-            <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(`Free website request ${sent.ref}`)}&body=${encodeURIComponent(composeRequest(f, d0, n))}`}>{CONTACT_EMAIL}</a>.
+            If you love it, you buy it. If you do not, that is the end of it: I will not contact you again.
           </p>
+          <EmailFallback name={f.name} email={f.email} refCode={sent.ref} message={`${composeRequest(f, d0, n)}\n\nRef ${sent.ref}`} />
         </div>
         <div className="actions">
           <div className="actions-in">

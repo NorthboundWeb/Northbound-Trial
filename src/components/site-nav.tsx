@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { CONTACT_EMAIL } from '@/lib/booking/options'
 import { messageHref, messageLabel } from '@/lib/contact'
 import { PAGES } from '@/lib/nav'
 import { search } from '@/lib/search'
@@ -156,7 +155,8 @@ export function SiteNav() {
 
             <div className="menu-contact">
               <p>Get in touch</p>
-              <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
+              <a href="/email">Email me</a>
+              <a href="/portal">Client login</a>
             </div>
           </div>
         </div>

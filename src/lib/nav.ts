@@ -10,5 +10,4 @@ export const PAGES = [
 
 export const SOCIALS = [
   { label: 'Instagram', href: 'https://www.instagram.com/northboundwebuk' },
-  { label: 'TikTok', href: 'https://www.tiktok.com/@northbound.web.uk' },
 ] as const

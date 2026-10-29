@@ -4,6 +4,12 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   async redirects() {
     return [
+      // Routes from the previous version of the site, kept so old links and search results still land somewhere useful.
+      { source: '/contact', destination: '/start', permanent: true },
+      { source: '/discover', destination: '/services', permanent: true },
+      { source: '/projects', destination: '/work', permanent: true },
+      { source: '/projects/:path*', destination: '/work', permanent: true },
+      { source: '/approach', destination: '/services', permanent: true },
       { source: '/booking', destination: '/start', permanent: false },
       { source: '/diary', destination: '/', permanent: false },
       { source: '/login', destination: '/start', permanent: false },

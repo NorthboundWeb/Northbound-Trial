@@ -65,7 +65,7 @@ export const buildPackages: BuildPackage[] = [
       'Booking setup for one staff calendar, with email confirmations',
       '1 revision round',
     ],
-    timeline: 'Approximately 7–10 working days',
+    timeline: 'Up to 24 hours to process, then an estimated 72 hours to build',
     enquiryParam: 'pro',
     cta: 'Choose Pro',
     highlights: [
@@ -91,7 +91,7 @@ export const buildPackages: BuildPackage[] = [
       'Booking setup for multiple staff calendars, with reminders, booking payments, cancellation and rescheduling, and custom questions',
       '2 revision rounds',
     ],
-    timeline: 'Approximately 10–15 working days',
+    timeline: 'Up to 24 hours to process, then an estimated 72 hours to build; larger requests can take longer',
     enquiryParam: 'ultimate',
     cta: 'Choose Ultimate',
     highlights: [
@@ -251,9 +251,9 @@ export const commercialTerms: { title: string; points: string[] }[] = [
   {
     title: 'Timescales',
     points: [
-      'Pro — approximately 7–10 working days.',
-      'Ultimate — approximately 10–15 working days.',
-      'Custom — agreed individually in your written quote.',
+      'Processing — up to 24 hours from your request.',
+      'Building — an estimated 72 hours after that, for Pro and Ultimate.',
+      'Larger requests, Custom builds and systems take longer; the date is agreed with you before I start.',
       TIMELINE_TERMS,
     ],
   },
@@ -305,7 +305,7 @@ export const process = [
   {
     step: '04',
     title: 'Build',
-    body: 'Built in the open on a live preview link you can check at any point. Most packages take somewhere between one and three weeks, counted from the go-ahead and the arrival of your content — an estimate rather than a promise, since it moves if content or feedback is slow.',
+    body: 'Built in the open on a live preview link you can check at any point. Up to 24 hours to process your request, then an estimated 72 hours to build, counted from the arrival of your content; larger requests take longer — an estimate rather than a promise, since it moves if content or feedback is slow.',
   },
   {
     step: '05',
