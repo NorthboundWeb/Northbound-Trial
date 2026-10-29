@@ -778,6 +778,7 @@ export function StartFlow() {
                       <li className="k-open">Free to pick</li>
                     </ul>
                     {months.length > 0 && (
+                      <>
                       <div className="sf-cal" id="sf-date" tabIndex={0} role="group" aria-label="Delivery date calendar. Scroll to see later months.">
                         <div className="sf-dows" aria-hidden="true">
                           {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
@@ -818,6 +819,7 @@ export function StartFlow() {
                       <p className="note sf-cal-hint" aria-hidden="true">
                         Scroll for later months ↓
                       </p>
+                      </>
                     )}
                     {err('date')}
                     <p className="note" aria-live="polite" style={{ marginTop: 14 }}>
