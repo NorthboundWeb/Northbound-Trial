@@ -155,8 +155,10 @@ export function SiteNav() {
 
             <div className="menu-contact">
               <p>Get in touch</p>
-              <a href="/email">Email me</a>
-              <a href="/portal">Client login</a>
+              <div className="menu-contact-links">
+                <a href="/email">Email me</a>
+                <a href="/portal">Client login</a>
+              </div>
             </div>
           </div>
         </div>
