@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { CONTACT_EMAIL } from '@/lib/booking/options'
+import { messageHref, messageLabel } from '@/lib/contact'
 import { PAGES, SOCIALS } from '@/lib/nav'
 
 export function SiteFooter() {
@@ -25,6 +26,11 @@ export function SiteFooter() {
           <p className="label">Get in touch</p>
           <ul>
             <li>
+              <a href={messageHref()} target="_blank" rel="noopener noreferrer">
+                {messageLabel}
+              </a>
+            </li>
+            <li>
               <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
             </li>
             {SOCIALS.map((s) => (
@@ -48,12 +54,11 @@ export function SiteFooter() {
 /** The floating "Message me" pill at the bottom of the marketing pages. */
 export function MessagePill() {
   return (
-    <a className="message-pill" href={`mailto:${CONTACT_EMAIL}`}>
+    <a className="message-pill" href={messageHref()} target="_blank" rel="noopener noreferrer" aria-label={messageLabel}>
       Message me
       <span aria-hidden="true">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M4 6h16v12H4z" />
-          <path d="M4 7l8 6 8-6" />
+          <path d="M20 12a8 8 0 0 1-11.6 7.1L4 20l1-4A8 8 0 1 1 20 12z" />
         </svg>
       </span>
     </a>

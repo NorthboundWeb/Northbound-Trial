@@ -4,13 +4,14 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { CONTACT_EMAIL } from '@/lib/booking/options'
+import { messageHref, messageLabel } from '@/lib/contact'
 import { PAGES } from '@/lib/nav'
 import { search } from '@/lib/search'
 import { LogoLink } from './logo-link'
 
 /**
  * The marketing pages' header: the mark on the left, a dark pill in the middle
- * holding the menu, and "Get started" on the right.
+ * holding the menu, and "Log in" on the right.
  *
  * Menu opens a full-screen panel: the header turns white on dark, a search box
  * sits above the pages in large type, with the message pill and the email
@@ -81,8 +82,8 @@ export function SiteNav() {
             UK
           </span>
         </div>
-        <Link className="btn dark nav-cta" href="/booking">
-          Get started
+        <Link className="btn dark nav-cta" href="/login">
+          Log in
         </Link>
       </header>
 
@@ -142,12 +143,11 @@ export function SiteNav() {
               </nav>
             )}
 
-            <a className="menu-message" href={`mailto:${CONTACT_EMAIL}`}>
+            <a className="menu-message" href={messageHref()} target="_blank" rel="noopener noreferrer" aria-label={messageLabel}>
               Message me
               <span aria-hidden="true">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M4 6h16v12H4z" />
-                  <path d="M4 7l8 6 8-6" />
+                  <path d="M20 12a8 8 0 0 1-11.6 7.1L4 20l1-4A8 8 0 1 1 20 12z" />
                 </svg>
               </span>
             </a>
