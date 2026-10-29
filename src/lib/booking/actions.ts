@@ -48,10 +48,13 @@ export async function getTaken(): Promise<string[]> {
   return rows.map((r) => slotKey(r.day, r.slot))
 }
 
-export async function getMine(): Promise<MyBooking[]> {
-  const tickets = await readTickets()
+async function mineFor(tickets: Awaited<ReturnType<typeof readTickets>>): Promise<MyBooking[]> {
   if (!tickets.length) return []
   return rpc<MyBooking[]>('nb_booking_mine', { p_items: tickets })
+}
+
+export async function getMine(): Promise<MyBooking[]> {
+  return mineFor(await readTickets())
 }
 
 export type CreateResult =
@@ -155,8 +158,11 @@ export async function createBooking(
 }
 
 export async function refreshVisitor(): Promise<{ taken: string[]; mine: MyBooking[] }> {
+  // Read the cookie outside the try, so Next can see this page is per-request
+  // instead of the catch swallowing its "dynamic" signal at build time.
+  const tickets = await readTickets()
   try {
-    const [taken, mine] = await Promise.all([getTaken(), getMine()])
+    const [taken, mine] = await Promise.all([getTaken(), mineFor(tickets)])
     return { taken, mine }
   } catch (error) {
     console.error('Refresh failed:', error)
