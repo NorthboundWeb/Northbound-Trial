@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 
-const KEY = 'nb-intro-seen'
+import { INTRO_KEY as KEY } from '@/lib/boot-scripts'
 
 /**
  * The Northbound opening sequence: the sun rises, the peaks grow, the name
@@ -59,5 +59,3 @@ export function Intro() {
   )
 }
 
-/** Runs before paint: skip the intro if it already played this session. */
-export const introSeenScript = `try{if(sessionStorage.getItem('${KEY}'))document.documentElement.dataset.nbIntro='seen'}catch(e){}`

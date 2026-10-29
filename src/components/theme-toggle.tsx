@@ -9,7 +9,8 @@ import { useEffect, useState } from 'react'
  * device only.
  */
 
-const KEY = 'nb-theme'
+import { THEME_KEY as KEY } from '@/lib/boot-scripts'
+
 export const THEME_EVENT = 'nb:theme'
 
 type Theme = 'light' | 'dark'
@@ -84,5 +85,3 @@ export function ThemeToggle() {
   )
 }
 
-/** Runs before paint so a saved dark theme never flashes white. */
-export const themeScript = `try{var t=localStorage.getItem('${KEY}');if(t==='dark'||t==='light')document.documentElement.dataset.theme=t}catch(e){}`
