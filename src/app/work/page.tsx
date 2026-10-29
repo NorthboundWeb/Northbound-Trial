@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { MockSite } from '@/components/mock-site'
 import { PageShell } from '@/components/page-shell'
-import { comparisons } from '@/lib/discover'
+import { WorkShot } from '@/components/work-shot'
+import { demos } from '@/lib/showcase'
 
 export const metadata: Metadata = { title: 'Work' }
 
@@ -12,26 +12,31 @@ export default function WorkPage() {
       <section className="page-head wrap">
         <p className="eyebrow">Work</p>
         <h1 className="section-h big">
-          Concepts you can check.
-          <span>Before and after.</span>
+          Twelve working sites.
+          <span>Open any of them.</span>
         </h1>
         <p className="section-sub">
-          Each one takes a typical small-business website and rebuilds it. Every business here is made up, and each page says so. The
-          measurements are properties of the mock-ups themselves, not claims about anyone&apos;s takings.
+          Each one is a full website for a made-up business, with the features a real one would need: bookings, baskets, quotes, timetables.
+          Nothing you enter is sent anywhere.
         </p>
       </section>
       <section className="band wrap">
-        <div className="work-grid">
-          {comparisons.map((c) => (
-            <Link key={c.slug} href={`/work/${c.slug}`} className="work-card">
-              <MockSite m={c.after} compact />
+        <div className="demo-grid">
+          {demos.map((d) => (
+            <Link key={d.slug} href={`/demos/${d.slug}`} className="demo-tile">
+              <span className="demo-tile-shot" aria-hidden="true">
+                <span className="demo-tile-scale">
+                  <WorkShot slug={d.slug} />
+                </span>
+              </span>
               <span className="work-meta">
-                <b>{c.business}</b>
-                <span>{c.trade}</span>
+                <b>{d.name}</b>
+                <span>{d.trade}</span>
               </span>
               <span className="work-tags">
-                <i>Concept</i>
-                <i>{c.changes.length} changes</i>
+                {d.shows.slice(0, 2).map((s) => (
+                  <i key={s}>{s}</i>
+                ))}
               </span>
             </Link>
           ))}
