@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { CONTACT_EMAIL } from '@/lib/booking/options'
-import { messageHref } from '@/lib/contact'
+import { whatsappHref } from '@/lib/contact'
 import {
   BUILD_OPTIONS,
   LAST_BOOKABLE_DAYS,
@@ -14,6 +14,7 @@ import {
   REPLY_OPTIONS,
   STEPS,
   addDays,
+  composeRequest,
   dayDiff,
   dayKind,
   emptyStart,
@@ -105,23 +106,20 @@ export function StartFlow() {
   const [processing, setProcessing] = useState(false)
   const [dragging, setDragging] = useState(false)
   const [errs, setErrs] = useState<Record<string, string>>({})
-  const [formMsg, setFormMsg] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [sent, setSent] = useState<{ ref: string; name: string; replyVia: string; date: string } | null>(null)
+  const [sent, setSent] = useState<{ ref: string; name: string; replyVia: string; date: string; href: string; files: File[] } | null>(null)
+  const [shareMsg, setShareMsg] = useState('')
+  const [canShare, setCanShare] = useState(false)
   const [today, setToday] = useState('')
   const [month, setMonth] = useState(0)
   const [summaryOpen, setSummaryOpen] = useState(false)
 
   const heading = useRef<HTMLHeadingElement>(null)
-  const trap = useRef<HTMLInputElement>(null)
   const fileInput = useRef<HTMLInputElement>(null)
   const detailsBox = useRef<HTMLTextAreaElement>(null)
-  const startedAt = useRef(0)
   const firstRender = useRef(true)
   const sentRef = useRef(sent)
 
   useEffect(() => {
-    startedAt.current = Date.now()
     if (window.location.search.includes('step=')) window.history.replaceState(null, '', window.location.pathname)
     const t = setTimeout(() => setToday(new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())), 0)
     return () => clearTimeout(t)
@@ -129,6 +127,9 @@ export function StartFlow() {
 
   useEffect(() => {
     sentRef.current = sent
+    if (!sent?.files.length) return
+    const t = setTimeout(() => setCanShare(typeof navigator.canShare === 'function' && navigator.canShare({ files: sent.files })), 0)
+    return () => clearTimeout(t)
   }, [sent])
 
   useEffect(() => {
@@ -139,8 +140,7 @@ export function StartFlow() {
     const onPop = () => {
       if (sentRef.current) return goWithCurtain('/')
       setErrs({})
-      setFormMsg('')
-      setStep(read())
+        setStep(read())
     }
     const onSwipe = (e: Event) => {
       if (sentRef.current) return
@@ -179,14 +179,12 @@ export function StartFlow() {
   function goTo(id: StepId) {
     if (id === step) return
     setErrs({})
-    setFormMsg('')
     setSummaryOpen(false)
     window.history.pushState(null, '', id === 'offer' ? window.location.pathname : `?step=${id}`)
     setStep(id)
   }
 
   function next() {
-    if (busy) return
     const found = validateStep(step, f, today)
     if (Object.keys(found).length) {
       setErrs(found)
@@ -245,35 +243,27 @@ export function StartFlow() {
     })
   }
 
-  async function submit() {
-    setBusy(true)
-    setFormMsg('')
+  /** Sends the request as a WhatsApp message to Che. Runs inside the click, so the new tab is not blocked. */
+  function submit() {
+    const ref = `NB-${Math.random().toString(36).slice(2, 8).toUpperCase()}`
+    const href = whatsappHref(`${composeRequest(f, today, photos.length)}\n\nRef ${ref}`)
+    const files = photos.map((p) => {
+      const bin = atob(p.data)
+      const bytes = new Uint8Array(bin.length)
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
+      return new File([bytes], `${p.name.replace(/\.[^.]+$/, '') || 'photo'}.jpg`, { type: 'image/jpeg' })
+    })
+    window.open(href, '_blank', 'noopener,noreferrer')
+    setSent({ ref, name: f.name, replyVia: f.replyVia, date: f.date, href, files })
+  }
+
+  async function sharePhotos() {
+    if (!sent?.files.length) return
     try {
-      const res = await fetch('/api/start', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          form: f,
-          photos: photos.map((p) => ({ name: p.name, type: p.type, data: p.data })),
-          startedAt: startedAt.current,
-          trap: trap.current?.value ?? '',
-        }),
-      })
-      const out = (await res.json().catch(() => null)) as { ok?: boolean; ref?: string; step?: StepId; errors?: Record<string, string>; message?: string } | null
-      if (out?.ok && out.ref) {
-        setSent({ ref: out.ref, name: f.name, replyVia: f.replyVia, date: f.date })
-        return
-      }
-      if (out?.step && out.step !== step) {
-        window.history.replaceState(null, '', `?step=${out.step}`)
-        setStep(out.step)
-      }
-      setErrs(out?.errors ?? {})
-      setFormMsg(out?.message ?? `That did not send. Please message me on WhatsApp or email ${CONTACT_EMAIL}.`)
-    } catch {
-      setFormMsg(`That did not send. Please message me on WhatsApp or email ${CONTACT_EMAIL}.`)
-    } finally {
-      setBusy(false)
+      await navigator.share({ files: sent.files, title: `Photos for ${sent.ref}` })
+      setShareMsg('Shared. Pick my chat in WhatsApp if it did not open there.')
+    } catch (e) {
+      if ((e as Error)?.name !== 'AbortError') setShareMsg('Your browser could not share them. Attach them in the WhatsApp chat with the paperclip.')
     }
   }
 
@@ -341,24 +331,45 @@ export function StartFlow() {
       done: !!(f.website.trim() || filledSocials.length || f.portfolio.trim()),
     },
     { id: 'date', label: 'Wanted by', value: f.date ? fmtDay(f.date, { weekday: 'short', day: 'numeric', month: 'short' }) : 'Pick a date', done: !!f.date },
-    { id: 'you', label: 'You', value: f.name.trim() ? `${f.name.trim()} · ${f.replyVia === 'whatsapp' ? 'WhatsApp' : f.replyVia === 'email' ? 'Email' : 'reply?'}` : 'Not filled in', done: !!(f.name.trim() && f.email.trim() && f.replyVia) },
+    { id: 'you', label: 'You', value: f.name.trim() ? `${f.name.trim()} · ${f.replyVia === 'whatsapp' ? 'WhatsApp' : f.replyVia === 'email' ? 'Email' : 'reply?'}` : 'Not filled in', done: !!(f.name.trim() && f.replyVia && (f.replyVia !== 'email' || f.email.trim())) },
   ]
   const doneCount = summary.filter((s) => s.done).length
 
   // ---- sent ------------------------------------------------------------------------
   if (sent) {
-    const first = sent.name.trim().split(/\s+/)[0] || 'there'
-    const how = sent.replyVia === 'whatsapp' ? 'on WhatsApp' : 'by email'
+    const first = sent.name.trim().split(/\s+/)[0] || 'friend'
+    const how = sent.replyVia === 'email' ? 'by email' : 'in the same chat'
     const d0 = today || sent.date
+    const n = sent.files.length
     return (
       <>
-        <TopBar count="Sent" progress={1} />
+        <TopBar count="Almost done" progress={1} />
         <div className="stage sf-stage step-in" id="main">
-          <p className="label">Request sent · Ref {sent.ref}</p>
+          <p className="label">Ref {sent.ref}</p>
           <h1 className="display" tabIndex={-1} ref={heading} style={{ marginTop: 14 }}>
-            Thanks, {first}. I am on it<span className="kick">.</span>
+            Press send in WhatsApp, {first}<span className="kick">.</span>
           </h1>
-          <p className="sub">I will reply {how} once I have read everything. You do not pay anything unless you love what I build.</p>
+          <p className="sub">
+            Your request is typed out in a WhatsApp chat with me. Press send there and I will reply {how}. Nothing to pay for your first website unless you love it.
+          </p>
+          <div className="sf-sendbox">
+            <a className="btn solid" href={sent.href} target="_blank" rel="noopener noreferrer">
+              Open WhatsApp again
+            </a>
+            {n > 0 &&
+              (canShare ? (
+                <button type="button" className="btn" onClick={sharePhotos}>
+                  Send my {n} photo{n === 1 ? '' : 's'}
+                </button>
+              ) : (
+                <p className="note">Then attach your {n} photo{n === 1 ? '' : 's'} in the chat with the paperclip.</p>
+              ))}
+          </div>
+          {shareMsg && (
+            <p className="note" aria-live="polite" style={{ marginTop: 10 }}>
+              {shareMsg}
+            </p>
+          )}
           <ol className="sf-timeline" aria-label="What happens next">
             <li className="k-processing">
               <b>{fmtDay(d0, { weekday: 'short', day: 'numeric', month: 'short' })}</b>
@@ -376,11 +387,8 @@ export function StartFlow() {
             </li>
           </ol>
           <p className="note" style={{ marginTop: 24 }}>
-            If you love it, you buy it. If you do not, that is the end of it: I will not contact you again. Anything to add? Quote {sent.ref} on{' '}
-            <a href={messageHref()} target="_blank" rel="noopener noreferrer">
-              WhatsApp
-            </a>{' '}
-            or at <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(sent.ref)}`}>{CONTACT_EMAIL}</a>.
+            If you love it, you buy it. If you do not, that is the end of it: I will not contact you again. No WhatsApp? Email the same details to{' '}
+            <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(`Free website request ${sent.ref}`)}&body=${encodeURIComponent(composeRequest(f, d0, n))}`}>{CONTACT_EMAIL}</a>.
           </p>
         </div>
         <div className="actions">
@@ -430,11 +438,6 @@ export function StartFlow() {
             aria-label={`Start a project: ${STEPS[at].label}`}
             id="sf-form"
           >
-            <div className="hp" aria-hidden="true">
-              <label htmlFor="sf-website-trap">Leave this empty</label>
-              <input id="sf-website-trap" ref={trap} tabIndex={-1} autoComplete="off" defaultValue="" />
-            </div>
-
             <div className="step-in" key={step}>
               {isOffer && (
                 <>
@@ -442,7 +445,7 @@ export function StartFlow() {
                   <h1 className="display sf-hero" tabIndex={-1} ref={heading}>
                     {OFFER.headline}
                   </h1>
-                  <p className="sub">Tell me what you need. I build it. If you love it, you buy it. If you do not, I will not contact you again.</p>
+                  <p className="sub">Your first website is on me. Tell me what you need and I build it. If you love it, you buy it. If you do not, I will not contact you again. After that, new websites and systems start with a 50% deposit.</p>
                   <div className="sf-offer">
                     {OFFER.points.map((p) => (
                       <button key={p.id} type="button" className="sf-offer-card" onClick={() => goTo('build')}>
@@ -547,7 +550,7 @@ export function StartFlow() {
                   <h1 className="display" tabIndex={-1} ref={heading}>
                     Got any photos?
                   </h1>
-                  <p className="sub">Your work, your premises, your logo, your team. Up to {MAX_PHOTOS}. No photos? Skip this, I can work without them.</p>
+                  <p className="sub">Your work, your premises, your logo, your team. Up to {MAX_PHOTOS}. After you press send, you can drop them into our WhatsApp chat. No photos? Skip this, I can work without them.</p>
                   <div className="body">
                     <div
                       className={`sf-drop${dragging ? ' over' : ''}`}
@@ -726,11 +729,11 @@ export function StartFlow() {
                   <h1 className="display" tabIndex={-1} ref={heading}>
                     Who am I building this for?
                   </h1>
-                  <p className="sub">No calls. I reply by message or email.</p>
+                  <p className="sub">No calls. Your request goes to me as a WhatsApp message, and I reply there or by email.</p>
                   <div className="body stack">
                     <div className="grid2">
                       {input('name', 'Your name', { ac: 'name' })}
-                      {input('email', 'Email', { type: 'email', ac: 'email' })}
+                      {input('email', 'Email', { type: 'email', ac: 'email', optional: f.replyVia !== 'email' })}
                     </div>
                     <div className="cards" role="group" aria-label="How should I reply" id="sf-replyVia" tabIndex={-1}>
                       {REPLY_OPTIONS.map((r) => (
@@ -741,7 +744,6 @@ export function StartFlow() {
                       ))}
                     </div>
                     {err('replyVia')}
-                    {f.replyVia === 'whatsapp' && input('phone', 'Mobile number with WhatsApp', { type: 'tel', ac: 'tel', hint: 'Only used to message you.' })}
                   </div>
                 </>
               )}
@@ -751,7 +753,7 @@ export function StartFlow() {
                   <h1 className="display" tabIndex={-1} ref={heading}>
                     Ready when you are.
                   </h1>
-                  <p className="sub">Tap anything to change it. Nothing to pay, and no obligation.</p>
+                  <p className="sub">Tap anything to change it. Sending opens WhatsApp with it all typed out for me. Nothing to pay, and no obligation.</p>
                   <div className="body sf-review">
                     {summary.map((s) => (
                       <button key={s.id} type="button" className={`sf-review-row${s.done ? '' : ' empty'}`} onClick={() => goTo(s.id)}>
@@ -772,14 +774,6 @@ export function StartFlow() {
                 </>
               )}
 
-              {formMsg && (
-                <div className="banner" role="alert" style={{ marginTop: 24 }}>
-                  {formMsg}{' '}
-                  <a href={messageHref()} target="_blank" rel="noopener noreferrer">
-                    Open WhatsApp
-                  </a>
-                </div>
-              )}
             </div>
           </form>
 
@@ -810,11 +804,11 @@ export function StartFlow() {
               Back
             </button>
           )}
-          <button className="btn solid grow" type="submit" form="sf-form" disabled={busy || processing}>
-            {isOffer ? 'Get my free website' : step === 'review' ? (busy ? 'Sending…' : 'Send my request') : step === 'photos' && !photos.length ? 'Skip for now' : 'Continue'}
+          <button className="btn solid grow" type="submit" form="sf-form" disabled={processing}>
+            {isOffer ? 'Get my free website' : step === 'review' ? 'Send on WhatsApp' : step === 'photos' && !photos.length ? 'Skip for now' : 'Continue'}
           </button>
         </div>
-        {isOffer && <p className="fine">Free to build · No deposit · No calls</p>}
+        {isOffer && <p className="fine">First website free · No deposit · No calls</p>}
       </div>
     </>
   )

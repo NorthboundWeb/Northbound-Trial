@@ -5,9 +5,9 @@
  */
 
 export const OFFER = {
-  headline: 'I will build your website for free.',
+  headline: 'I will build your first website for free.',
   points: [
-    { id: 'free', title: 'Free to build', body: 'No deposit and nothing to pay up front.' },
+    { id: 'free', title: 'Free to build', body: 'Your first website: no deposit and nothing to pay up front. After that, new work starts with a 50% deposit.' },
     { id: 'buy', title: 'Like it? Buy it.', body: 'If you love it, you buy it. If you do not, I will not contact you again.' },
     { id: 'any', title: 'Websites or systems', body: 'Sites, booking systems, shops, portals, tools. Tell me what you need.' },
     { id: 'no-obligation', title: 'No obligation', body: 'If you do not like my approach at all, you do not have to go ahead with anything.' },
@@ -29,7 +29,7 @@ export const BUILD_OPTIONS = [
 ] as const
 
 export const REPLY_OPTIONS = [
-  { id: 'whatsapp', label: 'WhatsApp', note: 'Quickest. I will message the number you give me.' },
+  { id: 'whatsapp', label: 'WhatsApp', note: 'Quickest. I reply in the same chat.' },
   { id: 'email', label: 'Email', note: 'A written reply to your inbox.' },
 ] as const
 export type ReplyVia = (typeof REPLY_OPTIONS)[number]['id']
@@ -128,7 +128,7 @@ export function validateStep(step: StepId, f: StartForm, today: string): Record<
   }
   if (step === 'details') {
     if (f.details.trim().length < 20) e.details = 'Tell me a bit more: what the business does and what the site needs to do.'
-    if (f.details.length > 5000) e.details = 'Please keep this under 5,000 characters.'
+    if (f.details.length > 3000) e.details = 'Please keep this under 3,000 characters. You can send more in the chat.'
     if (f.business.length > 120) e.business = 'That is too long.'
     if (f.trade.length > 120) e.trade = 'That is too long.'
   }
@@ -151,12 +151,10 @@ export function validateStep(step: StepId, f: StartForm, today: string): Record<
     const n = f.name.trim()
     if (n.length < 2) e.name = 'Add your name.'
     else if (n.length > 100) e.name = 'That name is too long.'
-    if (!EMAIL_RE.test(f.email.trim()) || f.email.length > 200) e.email = 'That email address does not look complete.'
     if (!REPLY_OPTIONS.some((r) => r.id === f.replyVia)) e.replyVia = 'Pick how you would like me to reply.'
-    if (f.replyVia === 'whatsapp') {
-      const d = f.phone.replace(/\D/g, '')
-      if (d.length < 10 || d.length > 15) e.phone = 'Add a mobile number that has WhatsApp.'
-    }
+    const em = f.email.trim()
+    if (f.replyVia === 'email' && !em) e.email = 'Add the email you would like the reply sent to.'
+    else if (em && (!EMAIL_RE.test(em) || em.length > 200)) e.email = 'That email address does not look complete.'
   }
   return e
 }
@@ -175,19 +173,21 @@ export function composeRequest(f: StartForm, today: string, photoCount: number) 
   const socials = f.socials.map((s) => s.trim()).filter(Boolean)
   const kind = f.date ? dayKind(today, f.date) : 'open'
   const lines = [
-    'FREE BUILD REQUEST',
+    'Hi Che, here is my free website request.',
+    '',
+    f.name.trim() ? `Name: ${f.name.trim()}` : '',
     `Wanted by: ${f.date ? fmtDay(f.date, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : '-'}${kind === 'maybe' ? ' (inside the possible-delay window)' : ''}`,
-    `Reply by: ${reply}${f.replyVia === 'whatsapp' ? ` (${f.phone.trim()})` : ''}`,
+    `Reply by: ${reply}${f.replyVia === 'email' ? ` (${f.email.trim()})` : ' (this chat)'}`,
     `Build: ${f.build.join(', ')}`,
     f.business.trim() ? `Business: ${f.business.trim()}` : '',
-    f.trade.trim() ? `What they do: ${f.trade.trim()}` : '',
+    f.trade.trim() ? `What I do: ${f.trade.trim()}` : '',
     f.website.trim() ? `Current website: ${f.website.trim()}` : 'Current website: none given',
     socials.length ? `Social pages: ${socials.join(', ')}` : '',
     f.portfolio.trim() ? `Portfolio: ${f.portfolio.trim()}` : '',
-    `Photos attached: ${photoCount}`,
+    photoCount ? `Photos: ${photoCount}, sending them next in this chat` : 'Photos: none',
     '',
     'Details:',
     f.details.trim(),
   ]
-  return lines.filter((l, i) => l !== '' || i === 10).join('\n')
+  return lines.filter((l, i) => l !== '' || i === 1 || i === lines.length - 3).join('\n')
 }

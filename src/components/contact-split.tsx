@@ -1,30 +1,22 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useRef, useState, useTransition } from 'react'
-import { requestText } from '@/lib/booking/actions'
-import { messageHref } from '@/lib/contact'
+import { useState } from 'react'
+import { WHATSAPP_NUMBER, whatsappHref } from '@/lib/contact'
 
 /**
- * The panel after the home page's first screen: on the left, leave a
- * WhatsApp number and get a message back; on the right, start a project.
+ * The panel after the home page's first screen: on the left, type a message
+ * and it opens straight into a WhatsApp chat with Che; on the right, start a
+ * project.
  */
-export function ContactSplit() {
-  const [num, setNum] = useState('')
-  const [state, setState] = useState<{ ok: boolean; message: string } | null>(null)
-  const [busy, start] = useTransition()
-  const startedAt = useRef(0)
-  const trap = useRef<HTMLInputElement>(null)
+const DISPLAY_NUMBER = WHATSAPP_NUMBER.replace(/^44/, '0').replace(/^(\d{5})(\d{6})$/, '$1 $2')
 
-  useEffect(() => {
-    startedAt.current = Date.now()
-  }, [])
+export function ContactSplit() {
+  const [text, setText] = useState('')
 
   function send(e: React.FormEvent) {
     e.preventDefault()
-    start(async () => {
-      setState(await requestText(num, { startedAt: startedAt.current, trap: trap.current?.value ?? '' }))
-    })
+    window.open(whatsappHref(text.trim() || undefined), '_blank', 'noopener,noreferrer')
   }
 
   return (
@@ -32,49 +24,21 @@ export function ContactSplit() {
       <div className="split-text">
         <div className="split-glow" aria-hidden="true" />
         <div className="split-in">
-          <p className="split-k">Message me directly</p>
-          {state?.ok ? (
-            <p className="split-done" role="status">
-              {state.message}
-            </p>
-          ) : (
-            <form className="split-form" onSubmit={send} noValidate>
-              <div className="hp" aria-hidden="true">
-                <label htmlFor="split-website">Leave this empty</label>
-                <input id="split-website" ref={trap} tabIndex={-1} autoComplete="off" defaultValue="" />
-              </div>
-              <label htmlFor="split-num" className="sr">
-                Your WhatsApp number
-              </label>
-              <input
-                id="split-num"
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                placeholder="Your WhatsApp number"
-                value={num}
-                onChange={(e) => setNum(e.target.value)}
-                aria-invalid={state && !state.ok ? true : undefined}
-                aria-describedby={state && !state.ok ? 'split-err' : undefined}
-              />
-              <button type="submit" className="split-go" disabled={busy}>
-                {busy ? 'Sending…' : 'Text me'}
-              </button>
-            </form>
-          )}
-          {state && !state.ok && (
-            <p className="split-err" id="split-err" role="alert">
-              {state.message}{' '}
-              <a href={messageHref()} target="_blank" rel="noopener noreferrer">
-                Open WhatsApp
-              </a>
-            </p>
-          )}
-          <p className="split-note">Only used to message you. No calls.</p>
+          <p className="split-k">Message me directly · {DISPLAY_NUMBER}</p>
+          <form className="split-form" onSubmit={send} noValidate>
+            <label htmlFor="split-msg" className="sr">
+              Your message
+            </label>
+            <input id="split-msg" type="text" placeholder="Hi Che, I need a website for…" value={text} onChange={(e) => setText(e.target.value)} />
+            <button type="submit" className="split-go">
+              Message me
+            </button>
+          </form>
+          <p className="split-note">Opens WhatsApp with your message ready to send. No calls.</p>
         </div>
       </div>
       <Link href="/start" className="split-start">
-        <span className="split-k">or get it built free, no deposit</span>
+        <span className="split-k">or get your first website built free</span>
         <span className="split-big">
           Start a project <span aria-hidden="true">→</span>
         </span>

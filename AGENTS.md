@@ -37,14 +37,11 @@ site; keep the two in step. Swiping right on a touch screen goes back a page (`s
   pickable) and days 4–6 "may move for big requests". The step rail, the
   summary panel and every review row jump to their step. Copy, dates and
   validation are in `src/lib/start/options.ts`, not JSX.
-- `src/app/api/start/route.ts` — the free-build write path (a route handler,
-  because photos exceed the 1 MB server-action limit). Validates on the
-  server, keeps the honeypot, the submit-time trap and the rate limit, then
-  posts to the Google Apps Script inbox (`apps-script/enquiries.gs`), which
-  emails Che, saves photos to a Drive folder and logs a row in the
-  "Northbound enquiries" Google Sheet. `src/lib/booking/actions.ts` holds the
-  "Text me" server action, which uses the same inbox. Both need
-  `ENQUIRY_WEBHOOK_URL` and `ENQUIRY_WEBHOOK_TOKEN` (server-side only).
+- There is no server write path and no inbox. Sending the request opens a
+  WhatsApp chat with Che (`whatsappHref` in `src/lib/contact.ts`) with the
+  whole request typed out (`composeRequest`); photos are then shared with the
+  Web Share API where the phone supports it, or attached in the chat. The
+  home "Message me directly" box opens WhatsApp the same way.
 - "Message me" opens WhatsApp (`src/lib/contact.ts`). No phone calls anywhere.
 - Home hero: `site-wall.tsx` (the demo sites drifting on a tilted plane, with
   a dot-field morph on a canvas) and `service-ticker.tsx`. Demo sites are in
@@ -56,13 +53,14 @@ site; keep the two in step. Swiping right on a touch screen goes back a page (`s
 
 Prices are real: Pro £249, Ultimate £349, management from £39 a month with the
 first month free and optional. No unlimited or guaranteed promises, no invented
-social proof. The free-build offer on `/start` (no deposit, buy it only if you
-like it, no further contact if not) is Che's own wording; keep it as written.
+social proof. The free build is for a client's **first** website only (no deposit, buy it
+only if you like it, no further contact if not); every later website or system
+starts with the 50% deposit. That is Che's own wording; keep it as written.
 The 72-hour build is an estimate, never a guarantee.
 
 ## Known gaps
 
-Supabase is no longer used (the old `nb_booking` schema can be dropped). Every env var is server-side
-only; never rename one to `NEXT_PUBLIC_*`.
+Supabase and the Google Sheet inbox are no longer used (the old `nb_booking`
+schema can be dropped). No env vars are needed.
 
 Run `npm run typecheck && npm run lint && npm run build` before committing.

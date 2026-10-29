@@ -751,3 +751,4 @@ html[data-theme="dark"] .card[aria-pressed="true"] { background: var(--wash); }
 html[data-theme="dark"] .k-processing { --k: #c8901f; --k-bg: rgba(242, 177, 52, .14); --k-ink: #f6c76a; }
 html[data-theme="dark"] .k-maybe { --k-bg: repeating-linear-gradient(135deg, rgba(255,255,255,.05) 0 6px, rgba(255,255,255,.09) 6px 12px); --k: rgba(255,255,255,.22); }
 @media (prefers-reduced-motion: reduce) { .sf-offer-card, .sf-offer-card i, .sf-photos li { transition: none; animation: none; } }
+.sf-sendbox { margin-top: 28px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }

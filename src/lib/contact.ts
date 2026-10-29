@@ -12,8 +12,13 @@ export const INSTAGRAM_HANDLE = 'northboundwebuk'
 const GREETING = 'Hi Che, I found Northbound Web and I’d like to talk about a website.'
 
 export function messageHref() {
-  if (WHATSAPP_NUMBER) return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(GREETING)}`
+  if (WHATSAPP_NUMBER) return whatsappHref()
   return `https://ig.me/m/${INSTAGRAM_HANDLE}`
+}
+
+/** A WhatsApp chat with Che, with `text` typed in ready to send. */
+export function whatsappHref(text: string = GREETING) {
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`
 }
 
 export const messageLabel = WHATSAPP_NUMBER ? 'Message me on WhatsApp' : 'Message me on Instagram'

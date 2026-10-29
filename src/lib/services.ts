@@ -230,7 +230,7 @@ export const COMPLIMENTARY_MONTH_TERMS =
  * guarantee, which is exactly what these are not.
  */
 export const TIMELINE_TERMS =
-  'Estimates, not guarantees. The clock starts once the deposit has been received and I have the information, content and assets needed to begin. Delays in content, feedback or approvals can move the completion date.'
+  'Estimates, not guarantees. The clock starts once I have your request (and, after your first website, the deposit) and I have the information, content and assets needed to begin. Delays in content, feedback or approvals can move the completion date.'
 
 /**
  * The practical commercial terms, shown on the services page. Wording here is
@@ -241,8 +241,9 @@ export const commercialTerms: { title: string; points: string[] }[] = [
   {
     title: 'Payment',
     points: [
-      'A 50% deposit secures your project and allows work to begin — £124.50 on Pro, £174.50 on Ultimate.',
-      'The remaining 50% is payable once the website is complete and approved, before it goes live.',
+      'Your first website with Northbound is built free, with no deposit. If you like it, you buy it at the package price; if you do not, you owe nothing and I will not contact you again.',
+      'After that, any further website or system starts with a 50% deposit — £124.50 on Pro, £174.50 on Ultimate.',
+      'On deposit work, the remaining 50% is payable once it is complete and approved, before it goes live.',
       'Northbound is not VAT registered, so no VAT is added to any price.',
       'Hosting, domains and third-party provider fees are separate unless a plan or quote says otherwise.',
     ],
@@ -294,7 +295,7 @@ export const process = [
   {
     step: '02',
     title: 'Confirmation',
-    body: 'You know the price before anything starts, because it is published. For a Custom build, the scope and the final figure are agreed in writing first. A 50% deposit secures the project, and the remaining 50% is payable once the site is complete and approved, before it goes live.',
+    body: 'You know the price before anything starts, because it is published. For a Custom build, the scope and the final figure are agreed in writing first. Your first website is built free with no deposit, and you only pay if you want to keep it. After that, a 50% deposit secures each project, and the remaining 50% is payable once it is complete and approved, before it goes live.',
   },
   {
     step: '03',
@@ -304,7 +305,7 @@ export const process = [
   {
     step: '04',
     title: 'Build',
-    body: 'Built in the open on a live preview link you can check at any point. Most packages take somewhere between one and three weeks, counted from the deposit and the arrival of your content — an estimate rather than a promise, since it moves if content or feedback is slow.',
+    body: 'Built in the open on a live preview link you can check at any point. Most packages take somewhere between one and three weeks, counted from the go-ahead and the arrival of your content — an estimate rather than a promise, since it moves if content or feedback is slow.',
   },
   {
     step: '05',
