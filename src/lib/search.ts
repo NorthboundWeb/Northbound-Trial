@@ -26,7 +26,7 @@ export const SEARCH_INDEX: SearchItem[] = [
     words: [c.business, c.trade, c.who, c.problem, ...c.changes.map((x) => x.title)].join(' '),
   })),
   { href: '/tools', title: 'Check your website', kind: 'Tool', words: 'site check score speed google padlock phone quiz tool' },
-  { href: '/booking', title: 'Book a free call', kind: '20 minutes', words: 'book call contact talk quote get started enquiry' },
+  { href: '/booking', title: 'Book a free call', kind: '20 minutes', words: 'book booking bookings call contact talk quote get started enquiry' },
 ]
 
 export function search(q: string): SearchItem[] {
