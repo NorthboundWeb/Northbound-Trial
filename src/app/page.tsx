@@ -1,18 +1,25 @@
 import Link from 'next/link'
 import { Faq, Process } from '@/components/faq'
+import { DemoSite } from '@/components/demo-site'
 import { MockSite } from '@/components/mock-site'
 import { PageShell } from '@/components/page-shell'
+import { ServiceTicker } from '@/components/service-ticker'
+import { SiteWall } from '@/components/site-wall'
 import { comparisons } from '@/lib/discover'
+import { demos } from '@/lib/showcase'
 import { ADVANCED_MANAGEMENT_PRICE, buildPackages, process } from '@/lib/services'
 
+/** The clickable list beside the wall: each one opens the page that covers it. */
 const TAGS = [
-  'Small-business websites',
-  'Website redesigns',
-  'Landing pages',
-  'Online booking',
-  'Local SEO',
-  'Monthly website care',
-  'Custom web apps',
+  { label: 'Small-business websites', href: '/services/pro' },
+  { label: 'Website redesigns', href: '/work' },
+  { label: 'Landing pages', href: '/services/pro' },
+  { label: 'Online booking', href: '/services/ultimate' },
+  { label: 'Local SEO', href: '/services/ultimate' },
+  { label: 'Online shops', href: '/demos/florist' },
+  { label: 'Monthly website care', href: '/services/management' },
+  { label: 'Custom web apps', href: '/services/custom' },
+  { label: 'Website check', href: '/tools' },
 ]
 
 const SERVICES = [
@@ -74,24 +81,11 @@ const FAQS = [
 ]
 
 export default function Home() {
-  const minis = comparisons.slice(0, 4)
   return (
     <PageShell>
       <section className="hero wrap">
-        <div className="collage" aria-hidden="true">
-          {minis.map((c, i) => (
-            <div key={c.slug} className={`collage-card c${i}`}>
-              <MockSite m={c.after} compact />
-            </div>
-          ))}
-        </div>
-        <ul className="tags" aria-label="What I build">
-          {TAGS.map((t, i) => (
-            <li key={t} style={{ animationDelay: `${i * 70}ms` }}>
-              {t}
-            </li>
-          ))}
-        </ul>
+        <SiteWall />
+        <ServiceTicker items={TAGS} />
         <div className="hero-text">
           <p className="hero-line">An independent web studio building fast, honest websites for UK small businesses.</p>
           <h1 className="hero-h">
@@ -101,6 +95,30 @@ export default function Home() {
           <a className="scroll-cue" href="#services">
             Scroll down
           </a>
+        </div>
+      </section>
+
+      <section className="band wrap" aria-labelledby="demos-h">
+        <p className="eyebrow">The sites on the wall are real pages. Open any of them.</p>
+        <h2 id="demos-h" className="section-h">
+          Twelve sites.
+          <span>Built to show what is possible.</span>
+        </h2>
+        <p className="section-sub">Every business here is made up. The bookings, price lists, shops and calculators are the kind of thing your site can have.</p>
+        <div className="demo-grid">
+          {demos.map((d) => (
+            <Link key={d.slug} href={`/demos/${d.slug}`} className="demo-tile">
+              <span className="demo-tile-shot" aria-hidden="true">
+                <span className="demo-tile-scale">
+                  <DemoSite d={d} />
+                </span>
+              </span>
+              <span className="work-meta">
+                <b>{d.name}</b>
+                <span>{d.trade}</span>
+              </span>
+            </Link>
+          ))}
         </div>
       </section>
 
@@ -154,7 +172,7 @@ export default function Home() {
 
       <section className="band wrap">
         <h2 className="section-h">
-          From first call
+          From first message
           <span>to a live site.</span>
         </h2>
         <p className="section-sub">How it works</p>
@@ -175,14 +193,14 @@ export default function Home() {
       <section className="band wrap">
         <div className="cta-panel">
           <p className="label" style={{ color: 'rgba(255,255,255,.7)' }}>
-            Free · 20 minutes · No obligation
+            Free · No calls · Written quote
           </p>
           <h2>Tell me what the site needs to do.</h2>
           <p>
-            Pick a time that suits you. If a smaller package would do the job, that is the one I will point you at. Pro is {`£${buildPackages[0].price}`}.
+            Five quick questions, then I reply by WhatsApp or email. If a smaller package would do the job, that is the one I will point you at. Pro is {`£${buildPackages[0].price}`}.
           </p>
-          <Link className="btn light grow-sm" href="/booking">
-            Book a call
+          <Link className="btn light grow-sm" href="/start">
+            Start a project
           </Link>
         </div>
       </section>

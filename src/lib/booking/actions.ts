@@ -1,71 +1,40 @@
 'use server'
 
 /**
- * Server actions: public POST endpoints. Everything a visitor sends is
- * re-validated here, then again in the database.
+ * "Start a project": the site's only write path, and a public POST endpoint.
+ * Everything is re-validated here, then posted to the Google Apps Script
+ * inbox (apps-script/enquiries.gs), which emails it to Che and adds a row to
+ * the "Northbound enquiries" Google Sheet. The script re-checks everything
+ * itself and HTML-escapes it before it goes into an email.
+ *
+ * ENQUIRY_WEBHOOK_URL and ENQUIRY_WEBHOOK_TOKEN are server-side only. Never
+ * rename either to NEXT_PUBLIC_*.
  */
 
 import { headers } from 'next/headers'
-import { redirect } from 'next/navigation'
 import { rateLimit } from '@/lib/rate-limit'
-import { addDays, nextWeekdays, slotKey, todayInLondon } from './dates'
-import { adminSecret, rpc } from './db'
-import {
-  CONTACT_EMAIL,
-  DAYS_SHOWN,
-  type BookingForm,
-  type DiaryBooking,
-  type MyBooking,
-  emptyForm,
-  validateAll,
-} from './options'
-import {
-  addTicket,
-  endDiarySession,
-  isDiaryOwner,
-  passwordMatches,
-  readTickets,
-  startDiarySession,
-} from './session'
+import { CONTACT_EMAIL, composeMessage, emptyForm, validateAll, type ProjectForm } from './options'
 
-const HONEYPOT = 'website'
 const MIN_FILL_MS = 4_000
+const WEBHOOK_TIMEOUT_MS = 8_000
 
-const GENERIC = `Something went wrong saving your request. Please try again, or email ${CONTACT_EMAIL} and we will find a time.`
+const GENERIC = `That did not send. Please message me on WhatsApp or email ${CONTACT_EMAIL} and I will pick it up.`
+
+export type StartResult =
+  | { ok: true; ref: string }
+  | { ok: false; step?: number; errors?: Record<string, string>; message?: string }
 
 async function clientKey() {
   const h = await headers()
   return h.get('x-forwarded-for')?.split(',')[0]?.trim() || h.get('x-real-ip') || 'unknown'
 }
 
-/** Slots that are booked or blocked, as "YYYY-MM-DD_HH:MM" keys. No personal data. */
-export async function getTaken(): Promise<string[]> {
-  const from = todayInLondon()
-  const rows = await rpc<{ day: string; slot: string }[]>('nb_booking_taken', {
-    p_from: from,
-    p_to: addDays(from, 31),
-  })
-  return rows.map((r) => slotKey(r.day, r.slot))
-}
-
-async function mineFor(tickets: Awaited<ReturnType<typeof readTickets>>): Promise<MyBooking[]> {
-  if (!tickets.length) return []
-  return rpc<MyBooking[]>('nb_booking_mine', { p_items: tickets })
-}
-
-export async function getMine(): Promise<MyBooking[]> {
-  return mineFor(await readTickets())
-}
-
-export type CreateResult =
-  | { ok: true; booking: MyBooking; taken: string[] }
-  | { ok: false; step?: number; errors?: Record<string, string>; message?: string; taken?: string[] }
-
-function clean(input: unknown): BookingForm {
+function clean(input: unknown): ProjectForm {
   const base = emptyForm()
   if (typeof input !== 'object' || input === null) return base
   const o = input as Record<string, unknown>
-  const str = (k: keyof BookingForm, max: number) => (typeof o[k] === 'string' ? (o[k] as string).slice(0, max) : '')
+  const str = (k: keyof ProjectForm, max: number) => (typeof o[k] === 'string' ? (o[k] as string).slice(0, max) : '')
+  const reply = str('replyVia', 10)
   return {
     help: Array.isArray(o.help) ? o.help.filter((x): x is string => typeof x === 'string').slice(0, 8) : [],
     other: str('other', 1200),
@@ -77,163 +46,65 @@ function clean(input: unknown): BookingForm {
     email: str('email', 220),
     phone: str('phone', 60),
     site: str('site', 220),
-    day: str('day', 10),
-    slot: str('slot', 5),
+    replyVia: reply === 'whatsapp' || reply === 'email' ? reply : '',
   }
 }
 
-export async function createBooking(
-  input: unknown,
-  meta: { startedAt: number; trap: string }
-): Promise<CreateResult> {
-  // Spam traps: the hidden field gets a generic failure, nothing is saved.
+export async function startProject(input: unknown, meta: { startedAt: number; trap: string }): Promise<StartResult> {
+  // Spam traps: a filled hidden field, or a form completed faster than a person can.
   if (meta.trap) return { ok: false, message: GENERIC }
   if (!Number.isFinite(meta.startedAt) || Date.now() - meta.startedAt < MIN_FILL_MS) {
     return { ok: false, message: 'That was very quick. Please check your answers and try again.' }
   }
-  const limited = rateLimit(`book:${await clientKey()}`, { limit: 6, windowMs: 60 * 60 * 1000 })
+  const limited = rateLimit(`start:${await clientKey()}`, { limit: 5, windowMs: 60 * 60 * 1000 })
   if (!limited.ok) {
-    return { ok: false, message: `You have sent a few requests already. Please try again later, or email ${CONTACT_EMAIL}.` }
+    return { ok: false, message: `You have sent a few already. Please try again later, or email ${CONTACT_EMAIL}.` }
   }
 
   const f = clean(input)
-  const days = nextWeekdays(DAYS_SHOWN)
-  const invalid = validateAll(f, days)
+  const invalid = validateAll(f)
   if (invalid) return { ok: false, step: invalid.step, errors: invalid.errors }
 
-  try {
-    const res = await rpc<{ ok: boolean; ref?: string; token?: string; error?: string; field?: string }>(
-      'nb_booking_create',
-      {
-        p: {
-          help: f.help,
-          other: f.other.trim(),
-          budget: f.budget,
-          plan: f.plan,
-          timeline: f.timeline,
-          name: f.name.trim(),
-          business: f.business.trim(),
-          email: f.email.trim(),
-          phone: f.phone.trim(),
-          site: f.site.trim(),
-          day: f.day,
-          slot: f.slot,
-        },
-      }
-    )
-    if (!res.ok || !res.ref || !res.token) {
-      if (res.error === 'taken') {
-        return {
-          ok: false,
-          step: 4,
-          errors: { slot: 'Someone has just taken that time. Pick another.' },
-          taken: await getTaken(),
-        }
-      }
-      if (res.error === 'limited') {
-        return {
-          ok: false,
-          message: `You already have three open requests with that email. Cancel one below, or email ${CONTACT_EMAIL}.`,
-        }
-      }
-      return { ok: false, message: GENERIC }
-    }
-    await addTicket({ ref: res.ref, token: res.token })
-    const booking: MyBooking = {
-      ref: res.ref,
-      day: f.day,
-      slot: f.slot,
-      status: 'requested',
-      help: f.help,
-      budget: f.budget,
-      timeline: f.timeline,
-      name: f.name.trim(),
-      email: f.email.trim(),
-    }
-    return { ok: true, booking, taken: await getTaken() }
-  } catch (error) {
-    console.error('Booking not saved:', error)
+  const url = process.env.ENQUIRY_WEBHOOK_URL
+  const token = process.env.ENQUIRY_WEBHOOK_TOKEN
+  if (!url || !token) {
+    console.error('Enquiry not sent: ENQUIRY_WEBHOOK_URL or ENQUIRY_WEBHOOK_TOKEN is missing.')
     return { ok: false, message: GENERIC }
   }
-}
 
-export async function refreshVisitor(): Promise<{ taken: string[]; mine: MyBooking[] }> {
-  // Read the cookie outside the try, so Next can see this page is per-request
-  // instead of the catch swallowing its "dynamic" signal at build time.
-  const tickets = await readTickets()
+  const ref = `NB-${crypto.randomUUID().slice(0, 6).toUpperCase()}`
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), WEBHOOK_TIMEOUT_MS)
   try {
-    const [taken, mine] = await Promise.all([getTaken(), mineFor(tickets)])
-    return { taken, mine }
+    // Apps Script answers a POST with a redirect to its reply, so follow it.
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      redirect: 'follow',
+      cache: 'no-store',
+      signal: controller.signal,
+      body: JSON.stringify({
+        token,
+        id: ref,
+        name: f.name.trim(),
+        email: f.email.trim(),
+        business: f.business.trim(),
+        projectType: f.help.join(', ').slice(0, 80),
+        budget: f.budget,
+        message: `Ref ${ref}\n${composeMessage(f)}`,
+      }),
+    })
+    const body: unknown = await res.json().catch(() => null)
+    const delivered = res.ok && typeof body === 'object' && body !== null && (body as { ok?: unknown }).ok === true
+    if (!delivered) {
+      console.error('The enquiry inbox rejected the enquiry:', { status: res.status, body })
+      return { ok: false, message: GENERIC }
+    }
+    return { ok: true, ref }
   } catch (error) {
-    console.error('Refresh failed:', error)
-    return { taken: [], mine: [] }
-  }
-}
-
-export async function cancelMine(ref: string): Promise<{ ok: boolean }> {
-  const t = (await readTickets()).find((x) => x.ref === ref)
-  if (!t) return { ok: false }
-  try {
-    return await rpc<{ ok: boolean }>('nb_booking_cancel', { p_ref: t.ref, p_token: t.token })
-  } catch (error) {
-    console.error('Cancel failed:', error)
-    return { ok: false }
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Diary (owner only)
-// ---------------------------------------------------------------------------
-
-export type DiaryLoginState = { error?: string }
-
-export async function diaryLogin(_prev: DiaryLoginState, formData: FormData): Promise<DiaryLoginState> {
-  const limited = rateLimit(`diary:${await clientKey()}`, { limit: 8, windowMs: 15 * 60 * 1000 })
-  if (!limited.ok) return { error: 'Too many attempts. Wait a few minutes and try again.' }
-  const attempt = String(formData.get('password') ?? '')
-  if (!attempt || !passwordMatches(attempt)) return { error: 'That password is not right.' }
-  await startDiarySession()
-  redirect('/diary')
-}
-
-export async function diaryLogout() {
-  await endDiarySession()
-  redirect('/diary')
-}
-
-export type DiaryData = { bookings: DiaryBooking[]; blocks: string[] }
-
-export async function getDiary(): Promise<DiaryData | null> {
-  if (!(await isDiaryOwner())) return null
-  const res = await rpc<{ ok: boolean; bookings?: DiaryBooking[]; blocks?: { day: string; slot: string }[] }>(
-    'nb_booking_admin_list',
-    { p_secret: adminSecret() }
-  )
-  if (!res.ok) throw new Error('The database refused the diary secret. Check NB_ADMIN_SECRET.')
-  return {
-    bookings: res.bookings ?? [],
-    blocks: (res.blocks ?? []).map((b) => slotKey(b.day, b.slot)),
-  }
-}
-
-export async function setBookingStatus(ref: string, status: 'confirmed' | 'cancelled') {
-  if (!(await isDiaryOwner())) return { ok: false, data: null }
-  await rpc('nb_booking_admin_set_status', { p_secret: adminSecret(), p_ref: ref, p_status: status })
-  return { ok: true, data: await getDiary() }
-}
-
-export async function setBlock(day: string, slot: string, block: boolean) {
-  if (!(await isDiaryOwner())) return { ok: false, data: null, error: '' }
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return { ok: false, data: null, error: 'Bad day.' }
-  const res = await rpc<{ ok: boolean; error?: string }>('nb_booking_admin_block', {
-    p_secret: adminSecret(),
-    p_day: day,
-    p_slot: slot,
-    p_block: block,
-  })
-  return {
-    ok: res.ok,
-    data: await getDiary(),
-    error: res.error === 'booked' ? 'Someone has booked that time. Cancel the booking first.' : '',
+    console.error('Failed to send enquiry:', error)
+    return { ok: false, message: GENERIC }
+  } finally {
+    clearTimeout(timer)
   }
 }

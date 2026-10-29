@@ -101,7 +101,7 @@ export function SiteCheck() {
           </>
         )}
         {done && (
-          <Link className="btn solid wide-btn" href="/booking">
+          <Link className="btn solid wide-btn" href="/start">
             Talk it through
           </Link>
         )}

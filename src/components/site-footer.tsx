@@ -45,7 +45,7 @@ export function SiteFooter() {
       </div>
       <div className="wrap foot-base">
         <span>© Northbound Web · United Kingdom</span>
-        <span>Preview build · <Link href="/diary">Diary</Link></span>
+        <span>Preview build</span>
       </div>
     </footer>
   )

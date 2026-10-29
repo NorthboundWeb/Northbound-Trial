@@ -5,7 +5,7 @@ export const PAGES = [
   { href: '/work', label: 'Work' },
   { href: '/about', label: 'About' },
   { href: '/tools', label: 'Tools' },
-  { href: '/booking', label: 'Book a call' },
+  { href: '/start', label: 'Start a project' },
 ] as const
 
 export const SOCIALS = [

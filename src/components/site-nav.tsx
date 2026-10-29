@@ -8,10 +8,11 @@ import { messageHref, messageLabel } from '@/lib/contact'
 import { PAGES } from '@/lib/nav'
 import { search } from '@/lib/search'
 import { LogoLink } from './logo-link'
+import { ThemeToggle } from './theme-toggle'
 
 /**
  * The marketing pages' header: the mark on the left, a dark pill in the middle
- * holding the menu, and "Log in" on the right.
+ * holding the menu and the light/dark switch, and "Start a project" on the right.
  *
  * Menu opens a full-screen panel: the header turns white on dark, a search box
  * sits above the pages in large type, with the message pill and the email
@@ -78,12 +79,13 @@ export function SiteNav() {
             </span>
             {open ? 'Close' : 'Menu'}
           </button>
+          <ThemeToggle />
           <span className="pillbar-chip" title="Working across the UK">
             UK
           </span>
         </div>
-        <Link className="btn dark nav-cta" href="/login">
-          Log in
+        <Link className="btn dark nav-cta" href="/start">
+          Start a project
         </Link>
       </header>
 

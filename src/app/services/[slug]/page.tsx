@@ -69,8 +69,8 @@ export default async function ServicePage({ params }: Props) {
             ))}
           </ul>
           <div className="detail-cta">
-            <Link className="btn solid" href="/booking">
-              Book a call
+            <Link className="btn solid" href="/start">
+              Start a project
             </Link>
             <Link className="text-link" href="/services">
               All services
@@ -132,7 +132,7 @@ export default async function ServicePage({ params }: Props) {
             Payment
           </p>
           <p>Half to start, half once the site is complete and approved, before it goes live.</p>
-          <Link className="btn solid wide-btn" href="/booking">
+          <Link className="btn solid wide-btn" href="/start">
             {p.cta}
           </Link>
         </aside>

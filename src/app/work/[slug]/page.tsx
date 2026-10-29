@@ -84,7 +84,7 @@ export default async function WorkDetail({ params }: Props) {
               ))}
             </tbody>
           </table>
-          <Link className="btn solid wide-btn" href="/booking">
+          <Link className="btn solid wide-btn" href="/start">
             Talk about your site
           </Link>
         </aside>

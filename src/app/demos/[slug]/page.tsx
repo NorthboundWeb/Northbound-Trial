@@ -48,7 +48,7 @@ export default async function DemoPage({ params }: Props) {
             ))}
           </ul>
         </div>
-        <Link className="btn solid" href="/booking">
+        <Link className="btn solid" href="/start">
           Want one like this?
         </Link>
       </aside>

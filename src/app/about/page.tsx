@@ -69,8 +69,8 @@ export default function AboutPage() {
           ))}
         </div>
         <div className="detail-cta">
-          <Link className="btn solid" href="/booking">
-            Book a call
+          <Link className="btn solid" href="/start">
+            Start a project
           </Link>
           <Link className="text-link" href="/services">
             See packages and prices

@@ -54,7 +54,7 @@ export default function ServicesPage() {
                 <b>{p.timeline}.</b> {TIMELINE_TERMS}
               </p>
               <div className="pkg-actions">
-                <Link className="btn solid" href="/booking">
+                <Link className="btn solid" href="/start">
                   {p.cta}
                 </Link>
                 <Link className="text-link" href={`/services/${p.slug}`}>

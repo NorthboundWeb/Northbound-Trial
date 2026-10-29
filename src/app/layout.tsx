@@ -1,8 +1,10 @@
 import type { Metadata } from 'next'
 import { Inter, Inter_Tight, JetBrains_Mono } from 'next/font/google'
 import { Curtain } from '@/components/curtain'
+import { DotCursor } from '@/components/dot-cursor'
 import { Intro, introSeenScript } from '@/components/intro'
 import { SwipeBack } from '@/components/swipe-back'
+import { themeScript } from '@/components/theme-toggle'
 import './globals.css'
 
 const sans = Inter({ subsets: ['latin'], variable: '--nb-sans', display: 'swap' })
@@ -20,10 +22,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en-GB" className={`${sans.variable} ${display.variable} ${mono.variable}`} suppressHydrationWarning>
       <body>
-        <script dangerouslySetInnerHTML={{ __html: introSeenScript }} />
+        <script dangerouslySetInnerHTML={{ __html: introSeenScript + themeScript }} />
         <Intro />
         <Curtain />
         <SwipeBack />
+        <DotCursor />
         <a className="skip" href="#main">
           Skip to content
         </a>

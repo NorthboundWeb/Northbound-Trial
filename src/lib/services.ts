@@ -289,7 +289,7 @@ export const process = [
   {
     step: '01',
     title: 'Conversation',
-    body: 'A call to work out what the site is for, who it is talking to, and which package fits. No charge and no obligation — and if a smaller package would do the job, that is the one I will point you at.',
+    body: 'A few messages to work out what the site is for, who it is talking to, and which package fits. No charge and no obligation — and if a smaller package would do the job, that is the one I will point you at.',
   },
   {
     step: '02',

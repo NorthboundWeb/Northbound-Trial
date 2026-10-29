@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useRef } from 'react'
 import { demos } from '@/lib/showcase'
 import { DemoSite } from './demo-site'
+import { THEME_EVENT } from './theme-toggle'
 
 /**
  * The home page's moving background: a tilted wall of the demo websites,
@@ -97,6 +98,11 @@ export function SiteWall() {
     el.addEventListener('pointerleave', onLeave)
 
     const offsets = [0, 0, 0]
+    let dark = document.documentElement.dataset.theme === 'dark'
+    const onTheme = () => {
+      dark = document.documentElement.dataset.theme === 'dark'
+    }
+    window.addEventListener(THEME_EVENT, onTheme)
 
     function draw(alpha: number) {
       ctx!.clearRect(0, 0, PLANE_W, PLANE_H)
@@ -131,7 +137,9 @@ export function SiteWall() {
           buckets[b].arc(x, y, rad, 0, Math.PI * 2)
         }
       }
-      const tones = ['rgba(12,18,32,.16)', 'rgba(12,18,32,.38)', 'rgba(12,18,32,.7)', 'rgba(12,18,32,.95)']
+      const tones = dark
+        ? ['rgba(242,245,250,.14)', 'rgba(242,245,250,.36)', 'rgba(242,245,250,.68)', 'rgba(242,245,250,.95)']
+        : ['rgba(12,18,32,.16)', 'rgba(12,18,32,.38)', 'rgba(12,18,32,.7)', 'rgba(12,18,32,.95)']
       ctx!.globalAlpha = alpha
       buckets.forEach((p, i) => {
         ctx!.fillStyle = tones[i]
@@ -176,6 +184,7 @@ export function SiteWall() {
       el.removeEventListener('pointermove', onMove)
       el.removeEventListener('pointerleave', onLeave)
       document.removeEventListener('visibilitychange', onVis)
+      window.removeEventListener(THEME_EVENT, onTheme)
     }
   }, [])
 

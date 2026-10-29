@@ -23,29 +23,29 @@ session.
 `/` home, `/services` and `/services/[pro|ultimate|custom|management]`,
 `/work` and `/work/[slug]` (made-up concept businesses from
 `src/lib/discover.ts`; always labelled as concepts), `/about`, `/tools` (the
-site self-check, runs in the browser only), `/booking`, `/diary`. Package
+site self-check, runs in the browser only), `/start`, `/demos/[slug]`. Package
 copy, prices and terms come from `src/lib/services.ts`, copied from the live
 site; keep the two in step. Swiping right on a touch screen goes back a page (`src/components/swipe-back.tsx`); booking steps are history entries (`?step=N`) so back, edge-swipe and the swipe step back one question. Clicking the logo plays the curtain
 (`src/components/curtain.tsx`) and goes home.
 
 ## How it fits together
 
-- `/booking` — the five-step flow (`src/components/booking-flow.tsx`): needs, working
-  budget, timeline, details, day and time. Copy and option lists are in
+- `/start` — "Start a project" (`src/components/project-flow.tsx`): needs,
+  working budget, timeline, details, then how to reply (WhatsApp or email).
+  No calls are booked. Copy and option lists are in
   `src/lib/booking/options.ts`, not JSX.
-- `/diary` — the owner view, behind `DIARY_PASSWORD`. Confirm or cancel
-  requests and block out times.
-- `src/lib/booking/actions.ts` — server actions, the only write paths. They are
-  public POST endpoints: validate on the server, keep the honeypot, the
-  submit-time trap and the rate limit.
-- Data lives in Supabase, schema `nb_booking`, which the API does not expose.
-  The app can only call the `public.nb_booking_*` functions in
-  `supabase/booking.sql`; they re-validate input, return only what each caller
-  may see, and the admin ones check `NB_ADMIN_SECRET` against a stored hash.
-  The first request for a slot wins (partial unique index plus an advisory
-  lock).
-- Visitors prove a request is theirs with a random token kept in an httpOnly
-  cookie; the database stores only its hash.
+- `src/lib/booking/actions.ts` — the only write path, a public POST endpoint.
+  Validates on the server, keeps the honeypot, the submit-time trap and the
+  rate limit, then posts to the Google Apps Script inbox
+  (`apps-script/enquiries.gs`, same script as the live site), which emails Che
+  and logs a row in the "Northbound enquiries" Google Sheet. Needs
+  `ENQUIRY_WEBHOOK_URL` and `ENQUIRY_WEBHOOK_TOKEN` (server-side only).
+- "Message me" opens WhatsApp (`src/lib/contact.ts`). No phone calls anywhere.
+- Home hero: `site-wall.tsx` (the demo sites drifting on a tilted plane, with
+  a dot-field morph on a canvas) and `service-ticker.tsx`. Demo sites are in
+  `src/lib/showcase.ts`, drawn by `demo-site.tsx`, full pages at
+  `/demos/[slug]`; all made-up businesses, always labelled.
+- `theme-toggle.tsx` (light/dark, circle reveal), `dot-cursor.tsx` (mouse only).
 
 ## Copy rules (same as the live site)
 
@@ -55,7 +55,7 @@ social proof. The call time is a *preferred* time until confirmed by email.
 
 ## Known gaps
 
-No email is sent to the visitor or owner yet. Every env var is server-side
+Supabase is no longer used (the old `nb_booking` schema can be dropped). Every env var is server-side
 only; never rename one to `NEXT_PUBLIC_*`.
 
 Run `npm run typecheck && npm run lint && npm run build` before committing.
