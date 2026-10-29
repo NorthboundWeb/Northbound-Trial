@@ -570,7 +570,7 @@ html:not([data-nb-intro="seen"]) body { overflow: hidden; }
 @media (max-width: 560px) { .demo-pitch > div { display: none; } }
 
 /* ===== Dot cursor ===== */
-.has-dot-cursor, .has-dot-cursor a, .has-dot-cursor button, .has-dot-cursor [role="tab"], .has-dot-cursor label { cursor: none; }
+.has-dot-cursor, .has-dot-cursor * { cursor: none; }
 .has-dot-cursor input, .has-dot-cursor textarea, .has-dot-cursor select { cursor: text; }
 .dot-cursor { position: fixed; left: 0; top: 0; z-index: 100000; pointer-events: none; mix-blend-mode: difference; opacity: 0; transition: opacity .2s; }
 .dot-cursor.on { opacity: 1; }
