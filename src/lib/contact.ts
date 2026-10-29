@@ -5,7 +5,7 @@
  * '447700900123'). While it is empty, "Message me" opens an Instagram DM
  * instead, so the button always goes somewhere real.
  */
-export const WHATSAPP_NUMBER = ''
+export const WHATSAPP_NUMBER = '447415273492'
 
 export const INSTAGRAM_HANDLE = 'northboundwebuk'
 
