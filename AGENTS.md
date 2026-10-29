@@ -18,9 +18,19 @@ Averlo's logo, wording, icons or colours. The intro curtain
 (`src/components/intro.tsx`, art in `public/brand/`) plays once per browser
 session.
 
+## Pages
+
+`/` home, `/services` and `/services/[pro|ultimate|custom|management]`,
+`/work` and `/work/[slug]` (made-up concept businesses from
+`src/lib/discover.ts`; always labelled as concepts), `/about`, `/tools` (the
+site self-check, runs in the browser only), `/booking`, `/diary`. Package
+copy, prices and terms come from `src/lib/services.ts`, copied from the live
+site; keep the two in step. Clicking the logo plays the curtain
+(`src/components/curtain.tsx`) and goes home.
+
 ## How it fits together
 
-- `/` — the five-step flow (`src/components/booking-flow.tsx`): needs, working
+- `/booking` — the five-step flow (`src/components/booking-flow.tsx`): needs, working
   budget, timeline, details, day and time. Copy and option lists are in
   `src/lib/booking/options.ts`, not JSX.
 - `/diary` — the owner view, behind `DIARY_PASSWORD`. Confirm or cancel
