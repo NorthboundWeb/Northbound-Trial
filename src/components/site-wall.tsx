@@ -41,6 +41,8 @@ const DOTS_FROM = 8
 const DOTS_TO = 12.5
 
 const SPACING = 11
+/** Phones get a coarser, cheaper dot field: about a third of the dots, drawn at 30 fps. */
+const SPACING_SMALL = 17
 
 function dotPhase(t: number) {
   const c = t % CYCLE
@@ -65,7 +67,9 @@ export function SiteWall() {
     if (!ctx) return
 
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const dpr = Math.min(window.devicePixelRatio || 1, 1.5)
+    const small = window.matchMedia('(max-width: 760px)').matches || window.matchMedia('(pointer: coarse)').matches
+    const spacing = small ? SPACING_SMALL : SPACING
+    const dpr = small ? 1 : Math.min(window.devicePixelRatio || 1, 1.5)
     cv.width = PLANE_W * dpr
     cv.height = PLANE_H * dpr
     ctx.scale(dpr, dpr)
@@ -105,16 +109,23 @@ export function SiteWall() {
     }
     window.addEventListener(THEME_EVENT, onTheme)
 
+    let cleared = true
     function draw(alpha: number) {
+      if (alpha <= 0.01) {
+        // Clear once on the way out, not every frame while the sites show.
+        if (!cleared) ctx!.clearRect(0, 0, PLANE_W, PLANE_H)
+        cleared = true
+        return
+      }
+      cleared = false
       ctx!.clearRect(0, 0, PLANE_W, PLANE_H)
-      if (alpha <= 0.01) return
       const buckets: Path2D[] = [new Path2D(), new Path2D(), new Path2D(), new Path2D()]
-      for (let y = SPACING / 2; y < PLANE_H; y += SPACING) {
+      for (let y = spacing / 2; y < PLANE_H; y += spacing) {
         const ry = y - TOP
         const r = Math.floor(ry / ROW_H)
         const inRowY = ry - r * ROW_H
         const rowOk = r >= 0 && r < 3 && inRowY >= 0 && inRowY <= CARD_H
-        for (let x = SPACING / 2; x < PLANE_W; x += SPACING) {
+        for (let x = spacing / 2; x < PLANE_W; x += spacing) {
           let level = 0 // 0 faint ground, 1 card body, 2 card detail, 3 card edge
           if (rowOk) {
             let lx = (x - offsets[r]) % PITCH
@@ -129,9 +140,10 @@ export function SiteWall() {
           }
           const dx = x - pointer.x
           const dy = y - pointer.y
-          const near = Math.max(0, 1 - Math.sqrt(dx * dx + dy * dy) / 160)
-          const wave = 0.85 + 0.15 * Math.sin(x * 0.012 + y * 0.008 + t * 1.6)
-          const base = [0.9, 1.5, 2.2, 2.8][level]
+          // Only do the square root for dots near the pointer.
+          const near = dx > -160 && dx < 160 && dy > -160 && dy < 160 ? Math.max(0, 1 - Math.sqrt(dx * dx + dy * dy) / 160) : 0
+          const wave = small ? 1 : 0.85 + 0.15 * Math.sin(x * 0.012 + y * 0.008 + t * 1.6)
+          const base = [0.9, 1.5, 2.2, 2.8][level] * (small ? 1.25 : 1)
           const rad = (base + near * 2.6) * wave
           const b = Math.min(3, level + (near > 0.5 ? 1 : 0))
           buckets[b].moveTo(x + rad, y)
@@ -149,11 +161,16 @@ export function SiteWall() {
       ctx!.globalAlpha = 1
     }
 
+    let skip = false
+    let cardsHidden = false
     function frame(now: number) {
       if (!visible || document.hidden) return
       const dt = Math.min(0.05, (now - last) / 1000)
       last = now
       if (!reduced) t += dt
+      const a = reduced ? 0 : dotPhase(t)
+      // Phones draw the dots every other frame; the sites themselves stay at full rate.
+      const drawNow = !(small && a > 0 && (skip = !skip))
       for (let r = 0; r < 3; r++) {
         // Wrap within one set of cards so the loop is seamless.
         const span = PITCH * PER_ROW
@@ -161,11 +178,19 @@ export function SiteWall() {
         if (o > 0) o -= span
         offsets[r] = o
         const row = rows.current[r]
-        if (row) row.style.transform = `translate3d(${o}px,0,0)`
+        // While the dots fully cover the sites, stop moving the hidden DOM.
+        if (row && a < 0.999) row.style.transform = `translate3d(${o}px,0,0)`
       }
-      const a = reduced ? 0 : dotPhase(t)
-      if (cardsLayer.current) cardsLayer.current.style.opacity = String(1 - a)
-      draw(a)
+      if (cardsLayer.current) {
+        cardsLayer.current.style.opacity = String(1 - a)
+        // Fully hidden layers cost nothing to composite.
+        const hide = a >= 0.999
+        if (hide !== cardsHidden) {
+          cardsHidden = hide
+          cardsLayer.current.style.visibility = hide ? 'hidden' : 'visible'
+        }
+      }
+      if (drawNow) draw(a)
       raf = requestAnimationFrame(frame)
     }
 

@@ -1031,3 +1031,7 @@ html[data-theme="dark"] .ww-floor { background: radial-gradient(ellipse at cente
 .pt-or { display: flex; align-items: center; gap: 14px; color: var(--muted); font-size: 13px; margin: 8px 0 0; }
 .pt-or::before, .pt-or::after { content: ''; flex: 1; height: 1px; background: var(--line2); }
 .pt-google + .pt-form { margin-top: 16px; }
+
+/* Site wall: keep the moving layers on the GPU so the dot morph does not stutter */
+.wall-cards { will-change: opacity; }
+.wall-dots { will-change: contents; transform: translateZ(0); }
