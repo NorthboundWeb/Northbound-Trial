@@ -7,7 +7,7 @@
  */
 export const WHATSAPP_NUMBER = '447415273492'
 
-export const INSTAGRAM_HANDLE = 'northboundwebuk'
+export const INSTAGRAM_HANDLE = 'northboundweb.uk'
 
 const GREETING = 'Hi Che, I found Northbound Web and I’d like to talk about a website.'
 
